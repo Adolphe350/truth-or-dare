@@ -3,74 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dare AI — Party Games</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <title>Dare AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; overflow-x: hidden; }
-        .landing { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; text-align: center; }
-        .hero-emoji { font-size: 3.5rem; margin-bottom: 10px; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        h1 { font-size: 2.5rem; font-weight: 900; background: linear-gradient(to right, #ff6b6b, #feca57, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
-        .tagline { color: #a8a8d8; font-size: 0.9rem; margin-bottom: 25px; }
-        .lang-select { display: flex; gap: 10px; margin-bottom: 25px; }
-        .lang-btn { padding: 10px 20px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); color: #a8a8d8; font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .lang-btn:hover, .lang-btn.selected { border-color: #feca57; color: #feca57; background: rgba(254,202,87,0.1); }
-        .games-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; max-width: 750px; width: 100%; }
-        .game-card { flex: 1 1 200px; max-width: 220px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px 16px; cursor: pointer; transition: all 0.3s; text-align: center; }
-        .game-card:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.05); transform: translateY(-4px); box-shadow: 0 15px 40px rgba(255,107,107,0.15); }
-        .game-card .icon { font-size: 2.5rem; margin-bottom: 10px; }
-        .game-card h2 { font-size: 1rem; margin-bottom: 6px; }
-        .game-card p { color: #a8a8d8; font-size: 0.75rem; line-height: 1.4; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: #0a0a0f;
+            color: #fff;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(120,40,200,0.28) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(255,60,100,0.2) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 60% 30%, rgba(0,200,255,0.1) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+            animation: bgShift 12s ease-in-out infinite alternate;
+        }
+        @keyframes bgShift { 0%{opacity:1} 100%{opacity:0.7;filter:hue-rotate(25deg)} }
+
+        .page {
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 24px; text-align: center;
+            position: relative; z-index: 1;
+        }
+
+        /* Logo */
+        .brand { margin-bottom: 8px; }
+        .brand-icon { font-size: 4rem; display: block; animation: float 3s ease-in-out infinite; filter: drop-shadow(0 0 30px rgba(255,100,150,0.6)); }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        .brand-name {
+            font-size: 3rem; font-weight: 900; letter-spacing: -1px;
+            background: linear-gradient(135deg, #fff 0%, rgba(200,150,255,0.9) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-sub { color: rgba(255,255,255,0.35); font-size: 0.85rem; margin-top: 4px; letter-spacing: 0.5px; }
+
+        /* Language pills */
+        .lang-row { display: flex; gap: 8px; margin: 28px 0; }
+        .lang-pill {
+            padding: 9px 22px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.45);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: all 0.25s;
+        }
+        .lang-pill:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.8); }
+        .lang-pill.active {
+            background: rgba(160,60,255,0.2);
+            border-color: rgba(160,60,255,0.5);
+            color: #c084fc;
+            box-shadow: 0 0 16px rgba(160,60,255,0.2);
+        }
+
+        /* Game grid */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            width: 100%; max-width: 500px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 22px;
+            padding: 28px 18px 24px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(.22,1,.36,1);
+            text-align: center;
+            backdrop-filter: blur(20px);
+            position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; inset: 0;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .card:hover { transform: translateY(-5px) scale(1.02); border-color: rgba(255,255,255,0.18); }
+        .card:hover::before { opacity: 1; }
+        .card:active { transform: scale(0.98); }
+
+        .card.c-truth::before  { background: linear-gradient(135deg, rgba(120,60,255,0.12), transparent); }
+        .card.c-knowme::before { background: linear-gradient(135deg, rgba(255,100,180,0.12), transparent); }
+        .card.c-mixed::before  { background: linear-gradient(135deg, rgba(255,140,0,0.12), transparent); }
+        .card.c-dare::before   { background: linear-gradient(135deg, rgba(255,50,80,0.12), transparent); }
+
+        .card:hover.c-truth  { border-color: rgba(120,60,255,0.4); box-shadow: 0 16px 40px rgba(120,60,255,0.15); }
+        .card:hover.c-knowme { border-color: rgba(255,100,180,0.4); box-shadow: 0 16px 40px rgba(255,100,180,0.15); }
+        .card:hover.c-mixed  { border-color: rgba(255,140,0,0.4); box-shadow: 0 16px 40px rgba(255,140,0,0.15); }
+        .card:hover.c-dare   { border-color: rgba(255,50,80,0.4); box-shadow: 0 16px 40px rgba(255,50,80,0.15); }
+
+        .card-emoji { font-size: 2.4rem; margin-bottom: 12px; display: block; }
+        .card-title { font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 5px; }
+        .card-desc  { font-size: 0.72rem; color: rgba(255,255,255,0.35); line-height: 1.5; }
+
+        .footer { margin-top: 40px; color: rgba(255,255,255,0.18); font-size: 0.72rem; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
-    <div class="landing">
-        <div class="hero-emoji">🎲</div>
-        <h1>Dare AI</h1>
-        <p class="tagline" id="tagline">Party games for two</p>
-
-        <div class="lang-select">
-            <button class="lang-btn selected" onclick="setLang('en')">🇬🇧 English</button>
-            <button class="lang-btn" onclick="setLang('fr')">🇫🇷 Français</button>
+    <div class="page">
+        <div class="brand">
+            <span class="brand-icon">🎲</span>
+            <div class="brand-name">Dare AI</div>
+            <div class="brand-sub" id="tagline">Party games for two</div>
         </div>
 
-        <div class="games-grid">
-            <div class="game-card" onclick="go('truth-only')">
-                <div class="icon">🤫</div>
-                <h2 id="c1">Truth Only</h2>
-                <p id="c1d">Deep questions only</p>
+        <div class="lang-row">
+            <button class="lang-pill active" onclick="setLang('en',this)">🇬🇧 English</button>
+            <button class="lang-pill" onclick="setLang('fr',this)">🇫🇷 Français</button>
+        </div>
+
+        <div class="grid">
+            <div class="card c-truth" onclick="go('truth-only')">
+                <span class="card-emoji">🤫</span>
+                <div class="card-title" id="c1">Truth Only</div>
+                <div class="card-desc" id="c1d">Deep questions, no dares</div>
             </div>
-            <div class="game-card" onclick="go('know-me')">
-                <div class="icon">💕</div>
-                <h2 id="c2">Know Me?</h2>
-                <p id="c2d">How well do you know each other?</p>
+            <div class="card c-knowme" onclick="go('know-me')">
+                <span class="card-emoji">💕</span>
+                <div class="card-title" id="c2">Know Me?</div>
+                <div class="card-desc" id="c2d">How well do you know each other?</div>
             </div>
-            <div class="game-card" onclick="go('truth-or-dare')">
-                <div class="icon">🔥</div>
-                <h2 id="c3">Truth or Dare</h2>
-                <p id="c3d">Mixed truths & dares</p>
+            <div class="card c-mixed" onclick="go('truth-or-dare')">
+                <span class="card-emoji">🔥</span>
+                <div class="card-title" id="c3">Truth or Dare</div>
+                <div class="card-desc" id="c3d">Mix of truths & dares</div>
             </div>
-            <div class="game-card" onclick="go('dare-only')">
-                <div class="icon">😈</div>
-                <h2 id="c4">Dare Only</h2>
-                <p id="c4d">Challenges only</p>
+            <div class="card c-dare" onclick="go('dare-only')">
+                <span class="card-emoji">😈</span>
+                <div class="card-title" id="c4">Dare Only</div>
+                <div class="card-desc" id="c4d">Challenges only</div>
             </div>
         </div>
+
+        <div class="footer">Fresh AI questions every round</div>
     </div>
-
     <script>
-        const texts = {
-            en: { tagline: "Party games for two", c1: "Truth Only", c1d: "Deep questions only", c2: "Know Me?", c2d: "How well do you know each other?", c3: "Truth or Dare", c3d: "Mixed truths & dares", c4: "Dare Only", c4d: "Challenges only" },
-            fr: { tagline: "Jeux pour deux", c1: "Vérité Seule", c1d: "Questions profondes", c2: "Tu Me Connais?", c2d: "Tu connais bien l'autre?", c3: "Action ou Vérité", c3d: "Vérités & défis mélangés", c4: "Action Seule", c4d: "Défis seulement" }
+        const T = {
+            en: { tagline:'Party games for two', c1:'Truth Only', c1d:'Deep questions, no dares', c2:'Know Me?', c2d:'How well do you know each other?', c3:'Truth or Dare', c3d:'Mix of truths & dares', c4:'Dare Only', c4d:'Challenges only' },
+            fr: { tagline:'Jeux pour deux', c1:'Vérité Seule', c1d:'Questions profondes', c2:'Tu Me Connais?', c2d:'Tu connais bien l\'autre?', c3:'Action ou Vérité', c3d:'Vérités & défis mélangés', c4:'Action Seule', c4d:'Défis seulement' }
         };
         let lang = localStorage.getItem('dare-lang') || 'en';
-        if (lang === 'rw') lang = 'en'; // remove rw
-        localStorage.setItem('dare-lang', lang);
-        updateUI();
+        if (lang === 'rw') lang = 'en';
+        renderLang();
+        // Highlight correct pill on load
+        document.querySelectorAll('.lang-pill').forEach(b => { b.classList.toggle('active', b.onclick.toString().includes(`'${lang}'`)); });
 
-        function setLang(l) { lang = l; localStorage.setItem('dare-lang', l); document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('selected')); event.target.classList.add('selected'); updateUI(); }
-        function updateUI() { const t = texts[lang] || texts.en; document.getElementById('tagline').textContent=t.tagline; document.getElementById('c1').textContent=t.c1; document.getElementById('c1d').textContent=t.c1d; document.getElementById('c2').textContent=t.c2; document.getElementById('c2d').textContent=t.c2d; document.getElementById('c3').textContent=t.c3; document.getElementById('c3d').textContent=t.c3d; document.getElementById('c4').textContent=t.c4; document.getElementById('c4d').textContent=t.c4d; }
+        function setLang(l, el) {
+            lang = l; localStorage.setItem('dare-lang', l);
+            document.querySelectorAll('.lang-pill').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderLang();
+        }
+        function renderLang() {
+            const t = T[lang] || T.en;
+            document.getElementById('tagline').textContent = t.tagline;
+            ['c1','c1d','c2','c2d','c3','c3d','c4','c4d'].forEach(id => document.getElementById(id).textContent = t[id]);
+        }
         function go(page) { window.location.href = `/${page}?lang=${lang}`; }
     </script>
 </body>
