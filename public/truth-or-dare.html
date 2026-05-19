@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Truth or Dare AI 🔥</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- SCREEN 1: Welcome -->
+        <div class="screen active" id="screen-welcome">
+            <div class="logo">🔥</div>
+            <h1>Truth or Dare</h1>
+            <p class="subtitle">AI-powered • No mercy • Two players</p>
+            
+            <div class="mode-select">
+                <div class="mode-btn" id="mode-same" onclick="selectMode('same')">
+                    <div class="icon">📱</div>
+                    <div class="label">Same Device</div>
+                </div>
+                <div class="mode-btn" id="mode-diff" onclick="selectMode('different')">
+                    <div class="icon">📱📱</div>
+                    <div class="label">Different Devices</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2a: Same Device Setup -->
+        <div class="screen" id="screen-same-setup">
+            <div class="logo">📱</div>
+            <h1>Same Device</h1>
+            <p class="subtitle">Enter both player names</p>
+            <input type="text" id="player1-name" placeholder="Player 1 name..." maxlength="20">
+            <input type="text" id="player2-name" placeholder="Player 2 name..." maxlength="20">
+            <button class="btn btn-primary" onclick="startSameDevice()">Let's Go! 🔥</button>
+            <a href="/" class="back-link">← Back to games</a>
+        </div>
+
+        <!-- SCREEN 2b: Different Devices - Create/Join -->
+        <div class="screen" id="screen-diff-setup">
+            <div class="logo">📱📱</div>
+            <h1>Different Devices</h1>
+            <p class="subtitle">One creates, one joins</p>
+            <input type="text" id="my-name" placeholder="Your name..." maxlength="20">
+            <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+            <div class="divider"><span>or</span></div>
+            <input type="text" id="room-input" placeholder="Enter room code..." maxlength="6" style="text-transform: uppercase; text-align: center; letter-spacing: 4px; font-size: 1.4rem;">
+            <button class="btn btn-secondary" onclick="joinRoom()">Join Room</button>
+            <div class="error-msg" id="error-msg"></div>
+            <a href="/" class="back-link">← Back to games</a>
+        </div>
+
+        <!-- SCREEN 3: Waiting Room -->
+        <div class="screen" id="screen-waiting">
+            <div class="logo">⏳</div>
+            <h1>Waiting Room</h1>
+            <div class="room-code">
+                <div class="label">SHARE THIS CODE</div>
+                <div class="code" id="display-room-code">------</div>
+                <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
+            </div>
+            <div class="players-list" id="players-list"></div>
+            <p class="waiting-text" id="waiting-text">Waiting for second player...</p>
+            <button class="btn btn-primary" id="start-btn" style="display:none;" onclick="startGame()">Start Game! 🎲</button>
+        </div>
+
+        <!-- SCREEN 4: Game -->
+        <div class="screen" id="screen-game">
+            <div class="question-card" id="question-card">
+                <div class="target" id="q-target">Loading...</div>
+                <div class="type" id="q-type">...</div>
+                <div class="text" id="q-text">Generating question...</div>
+                <div class="ai-badge">⚡ powered by AI</div>
+            </div>
+
+            <div class="category-chips" id="category-chips">
+                <div class="chip selected" onclick="selectCategory(this, 'random')">🎲 Random</div>
+                <div class="chip" onclick="selectCategory(this, 'sexual experiences')">🔥 Spicy</div>
+                <div class="chip" onclick="selectCategory(this, 'family secrets')">👨‍👩‍👧 Family</div>
+                <div class="chip" onclick="selectCategory(this, 'Christian faith & morality')">✝️ Faith</div>
+                <div class="chip" onclick="selectCategory(this, 'ex relationships')">💔 Exes</div>
+                <div class="chip" onclick="selectCategory(this, 'deep fears')">😱 Deep</div>
+                <div class="chip" onclick="selectCategory(this, 'controversial opinions')">🤔 Hot Takes</div>
+            </div>
+
+            <div class="confirmation-bar" id="confirm-bar">
+                <div class="confirmation-dot" id="dot1"></div>
+                <div class="confirmation-dot" id="dot2"></div>
+                <span id="confirm-text">Both must tap to continue</span>
+            </div>
+
+            <button class="btn btn-confirm" id="next-btn" onclick="confirmNext()">
+                Next Question ➡️
+            </button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentMode = null;
+        let roomId = null;
+        let myName = '';
+        let selectedCategory = null;
+        let hasConfirmed = false;
+        let isSameDevice = false;
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById(`mode-${mode === 'same' ? 'same' : 'diff'}`).classList.add('selected');
+            setTimeout(() => {
+                showScreen(mode === 'same' ? 'screen-same-setup' : 'screen-diff-setup');
+            }, 300);
+        }
+
+        function selectCategory(el, cat) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedCategory = cat === 'random' ? null : cat;
+        }
+
+        function startSameDevice() {
+            const p1 = document.getElementById('player1-name').value.trim();
+            const p2 = document.getElementById('player2-name').value.trim();
+            if (!p1 || !p2) return;
+            isSameDevice = true;
+            myName = p1;
+            socket.emit('create-room', { name: p1, sameDevice: true, gameType: 'truth-or-dare' });
+            socket.once('room-created', (data) => {
+                roomId = data.roomId;
+                socket.emit('same-device-mode', { name2: p2 });
+            });
+        }
+
+        function createRoom() {
+            const name = document.getElementById('my-name').value.trim();
+            if (!name) return;
+            myName = name;
+            socket.emit('create-room', { name, gameType: 'truth-or-dare' });
+        }
+
+        function joinRoom() {
+            const name = document.getElementById('my-name').value.trim();
+            const code = document.getElementById('room-input').value.trim().toUpperCase();
+            if (!name || !code) return;
+            myName = name;
+            socket.emit('join-room', { roomId: code, name });
+        }
+
+        function copyCode() {
+            const code = document.getElementById('display-room-code').textContent;
+            navigator.clipboard.writeText(code);
+            document.querySelector('.copy-btn').textContent = '✅ Copied!';
+            setTimeout(() => { document.querySelector('.copy-btn').textContent = '📋 Copy Code'; }, 2000);
+        }
+
+        function startGame() {
+            socket.emit('start-game', { category: selectedCategory });
+            document.getElementById('start-btn').innerHTML = '<span class="loading"></span> Generating...';
+        }
+
+        function confirmNext() {
+            if (hasConfirmed) return;
+            hasConfirmed = true;
+            document.getElementById('next-btn').classList.add('confirmed');
+            document.getElementById('next-btn').textContent = '✅ Waiting for other player...';
+            if (isSameDevice) {
+                document.getElementById('next-btn').textContent = '✅ Loading next...';
+            }
+            socket.emit('confirm-next', { category: selectedCategory });
+        }
+
+        // Socket events
+        socket.on('room-created', (data) => {
+            roomId = data.roomId;
+            document.getElementById('display-room-code').textContent = data.roomId;
+            updatePlayersList(data.players);
+            if (!isSameDevice) showScreen('screen-waiting');
+        });
+
+        socket.on('player-joined', (data) => {
+            updatePlayersList(data.players);
+            if (data.players.length >= 2) {
+                document.getElementById('waiting-text').textContent = 'Both players ready!';
+                document.getElementById('start-btn').style.display = 'block';
+                if (isSameDevice) {
+                    showScreen('screen-waiting');
+                    setTimeout(() => startGame(), 500);
+                }
+            }
+        });
+
+        socket.on('player-left', (data) => {
+            updatePlayersList(data.players);
+            document.getElementById('waiting-text').textContent = 'Waiting for second player...';
+            document.getElementById('start-btn').style.display = 'none';
+        });
+
+        socket.on('new-question', (data) => {
+            showScreen('screen-game');
+            hasConfirmed = false;
+            const card = document.getElementById('question-card');
+            card.style.animation = 'none';
+            setTimeout(() => { card.style.animation = 'slideIn 0.5s ease'; }, 10);
+            document.getElementById('q-target').textContent = `🎯 ${data.targetPlayer}'s turn`;
+            const isTruth = data.question.startsWith('TRUTH:');
+            const isDare = data.question.startsWith('DARE:');
+            const typeEl = document.getElementById('q-type');
+            if (isTruth) { typeEl.textContent = '🤫 TRUTH'; typeEl.className = 'type type-truth'; }
+            else if (isDare) { typeEl.textContent = '😈 DARE'; typeEl.className = 'type type-dare'; }
+            else { typeEl.textContent = '🎲 CHALLENGE'; typeEl.className = 'type type-truth'; }
+            document.getElementById('q-text').textContent = data.question.replace(/^(TRUTH:|DARE:)\s*/, '');
+            const btn = document.getElementById('next-btn');
+            btn.classList.remove('confirmed');
+            btn.textContent = 'Next Question ➡️';
+            document.getElementById('dot1').classList.remove('active');
+            document.getElementById('dot2').classList.remove('active');
+            document.getElementById('confirm-text').textContent = isSameDevice ? 'Tap to continue' : 'Both must tap to continue';
+        });
+
+        socket.on('confirmation-update', (data) => {
+            if (data.confirmations >= 1) document.getElementById('dot1').classList.add('active');
+            if (data.confirmations >= 2) document.getElementById('dot2').classList.add('active');
+            if (data.confirmations >= data.needed) document.getElementById('confirm-text').textContent = 'Generating next question...';
+        });
+
+        socket.on('error', (data) => {
+            document.getElementById('error-msg').textContent = data.message;
+            setTimeout(() => { document.getElementById('error-msg').textContent = ''; }, 3000);
+        });
+
+        function updatePlayersList(players) {
+            document.getElementById('players-list').innerHTML = players.map(p => `<span class="player-tag">👤 ${p.name}</span>`).join('');
+        }
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const btn = input.parentElement.querySelector('.btn-primary'); if (btn) btn.click(); } });
+        });
+    </script>
+</body>
+</html>

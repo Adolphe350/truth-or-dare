@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>How Well Do You Know Me? 💕</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- SCREEN 1: Welcome -->
+        <div class="screen active" id="screen-welcome">
+            <div class="logo">💕</div>
+            <h1>Know Me?</h1>
+            <p class="subtitle">Test how well you really know each other</p>
+            
+            <div class="mode-select">
+                <div class="mode-btn" id="mode-same" onclick="selectMode('same')">
+                    <div class="icon">📱</div>
+                    <div class="label">Same Device</div>
+                </div>
+                <div class="mode-btn" id="mode-diff" onclick="selectMode('different')">
+                    <div class="icon">📱📱</div>
+                    <div class="label">Different Devices</div>
+                </div>
+            </div>
+            <div class="how-it-works">
+                <p>📖 <strong>How it works:</strong></p>
+                <p>AI asks about <em>you</em> — but your partner answers!<br>
+                "What's Alice's favorite food?" → Aaron guesses.<br>
+                Then Alice reveals the real answer. Score points!</p>
+            </div>
+        </div>
+
+        <!-- SCREEN 2a: Same Device Setup -->
+        <div class="screen" id="screen-same-setup">
+            <div class="logo">📱</div>
+            <h1>Same Device</h1>
+            <p class="subtitle">Enter both player names</p>
+            <input type="text" id="player1-name" placeholder="Player 1 name..." maxlength="20">
+            <input type="text" id="player2-name" placeholder="Player 2 name..." maxlength="20">
+            <button class="btn btn-primary" onclick="startSameDevice()">Let's Play! 💕</button>
+            <a href="/" class="back-link">← Back to games</a>
+        </div>
+
+        <!-- SCREEN 2b: Different Devices -->
+        <div class="screen" id="screen-diff-setup">
+            <div class="logo">📱📱</div>
+            <h1>Different Devices</h1>
+            <p class="subtitle">One creates, one joins</p>
+            <input type="text" id="my-name" placeholder="Your name..." maxlength="20">
+            <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+            <div class="divider"><span>or</span></div>
+            <input type="text" id="room-input" placeholder="Enter room code..." maxlength="6" style="text-transform: uppercase; text-align: center; letter-spacing: 4px; font-size: 1.4rem;">
+            <button class="btn btn-secondary" onclick="joinRoom()">Join Room</button>
+            <div class="error-msg" id="error-msg"></div>
+            <a href="/" class="back-link">← Back to games</a>
+        </div>
+
+        <!-- SCREEN 3: Waiting Room -->
+        <div class="screen" id="screen-waiting">
+            <div class="logo">⏳</div>
+            <h1>Waiting Room</h1>
+            <div class="room-code">
+                <div class="label">SHARE THIS CODE</div>
+                <div class="code" id="display-room-code">------</div>
+                <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
+            </div>
+            <div class="players-list" id="players-list"></div>
+            <p class="waiting-text" id="waiting-text">Waiting for second player...</p>
+            <button class="btn btn-primary" id="start-btn" style="display:none;" onclick="startGame()">Start Game! 💕</button>
+        </div>
+
+        <!-- SCREEN 4: Question Phase -->
+        <div class="screen" id="screen-question">
+            <div class="question-card">
+                <div class="target" id="q-about">About...</div>
+                <div class="type type-know">🧠 GUESS</div>
+                <div class="text" id="q-text">Loading question...</div>
+                <div class="ai-badge">⚡ powered by AI</div>
+            </div>
+
+            <div class="answer-section">
+                <p class="answer-instruction" id="answer-instruction">Type your guess...</p>
+                <input type="text" id="answer-input" placeholder="Your answer..." maxlength="200">
+                <button class="btn btn-primary" id="submit-answer-btn" onclick="submitAnswer()">Submit Answer 📝</button>
+            </div>
+
+            <div class="score-bar" id="score-bar">
+                <span id="score-p1">0</span> — <span id="score-p2">0</span>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: Reveal Phase -->
+        <div class="screen" id="screen-reveal">
+            <div class="question-card reveal-card">
+                <div class="target" id="r-question">The question was...</div>
+                <div class="reveal-answers">
+                    <div class="reveal-answer" id="r-guess">
+                        <div class="reveal-label">🤔 Guess:</div>
+                        <div class="reveal-text" id="r-guess-text">...</div>
+                    </div>
+                    <div class="reveal-answer" id="r-real">
+                        <div class="reveal-label">✅ Real Answer:</div>
+                        <div class="reveal-text" id="r-real-text">...</div>
+                    </div>
+                </div>
+                <div class="reveal-verdict" id="r-verdict"></div>
+            </div>
+
+            <div class="score-bar">
+                <span id="reveal-score-p1">0</span> — <span id="reveal-score-p2">0</span>
+            </div>
+
+            <div class="confirmation-bar" id="confirm-bar">
+                <div class="confirmation-dot" id="dot1"></div>
+                <div class="confirmation-dot" id="dot2"></div>
+                <span id="confirm-text">Both must tap to continue</span>
+            </div>
+
+            <button class="btn btn-confirm" id="next-btn" onclick="confirmNext()">
+                Next Question ➡️
+            </button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentMode = null;
+        let roomId = null;
+        let myName = '';
+        let hasConfirmed = false;
+        let isSameDevice = false;
+        let currentPhase = 'guess'; // 'guess' or 'reveal'
+        let waitingForReveal = false;
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById(`mode-${mode === 'same' ? 'same' : 'diff'}`).classList.add('selected');
+            setTimeout(() => showScreen(mode === 'same' ? 'screen-same-setup' : 'screen-diff-setup'), 300);
+        }
+
+        function startSameDevice() {
+            const p1 = document.getElementById('player1-name').value.trim();
+            const p2 = document.getElementById('player2-name').value.trim();
+            if (!p1 || !p2) return;
+            isSameDevice = true;
+            myName = p1;
+            socket.emit('create-room', { name: p1, sameDevice: true, gameType: 'know-me' });
+            socket.once('room-created', (data) => {
+                roomId = data.roomId;
+                socket.emit('same-device-mode', { name2: p2 });
+            });
+        }
+
+        function createRoom() {
+            const name = document.getElementById('my-name').value.trim();
+            if (!name) return;
+            myName = name;
+            socket.emit('create-room', { name, gameType: 'know-me' });
+        }
+
+        function joinRoom() {
+            const name = document.getElementById('my-name').value.trim();
+            const code = document.getElementById('room-input').value.trim().toUpperCase();
+            if (!name || !code) return;
+            myName = name;
+            socket.emit('join-room', { roomId: code, name });
+        }
+
+        function copyCode() {
+            const code = document.getElementById('display-room-code').textContent;
+            navigator.clipboard.writeText(code);
+            document.querySelector('.copy-btn').textContent = '✅ Copied!';
+            setTimeout(() => { document.querySelector('.copy-btn').textContent = '📋 Copy Code'; }, 2000);
+        }
+
+        function startGame() {
+            socket.emit('start-game', {});
+            document.getElementById('start-btn').innerHTML = '<span class="loading"></span> Generating...';
+        }
+
+        function submitAnswer() {
+            const answer = document.getElementById('answer-input').value.trim();
+            if (!answer) return;
+            document.getElementById('submit-answer-btn').disabled = true;
+            document.getElementById('submit-answer-btn').textContent = '✅ Submitted!';
+            document.getElementById('answer-input').disabled = true;
+            socket.emit('know-me-answer', { answer });
+        }
+
+        function confirmNext() {
+            if (hasConfirmed) return;
+            hasConfirmed = true;
+            document.getElementById('next-btn').classList.add('confirmed');
+            document.getElementById('next-btn').textContent = '✅ Waiting...';
+            socket.emit('confirm-next', {});
+        }
+
+        // Socket events
+        socket.on('room-created', (data) => {
+            roomId = data.roomId;
+            document.getElementById('display-room-code').textContent = data.roomId;
+            updatePlayersList(data.players);
+            if (!isSameDevice) showScreen('screen-waiting');
+        });
+
+        socket.on('player-joined', (data) => {
+            updatePlayersList(data.players);
+            if (data.players.length >= 2) {
+                document.getElementById('waiting-text').textContent = 'Both players ready!';
+                document.getElementById('start-btn').style.display = 'block';
+                if (isSameDevice) {
+                    showScreen('screen-waiting');
+                    setTimeout(() => startGame(), 500);
+                }
+            }
+        });
+
+        socket.on('player-left', (data) => {
+            updatePlayersList(data.players);
+            document.getElementById('waiting-text').textContent = 'Waiting for second player...';
+            document.getElementById('start-btn').style.display = 'none';
+        });
+
+        socket.on('know-me-question', (data) => {
+            showScreen('screen-question');
+            document.getElementById('q-about').textContent = `❓ About ${data.aboutPlayer}`;
+            document.getElementById('q-text').textContent = data.question;
+            document.getElementById('answer-input').value = '';
+            document.getElementById('answer-input').disabled = false;
+            document.getElementById('submit-answer-btn').disabled = false;
+            document.getElementById('submit-answer-btn').textContent = 'Submit Answer 📝';
+            
+            if (data.guesser === myName || isSameDevice) {
+                document.getElementById('answer-instruction').textContent = 
+                    `${data.guesser}, guess the answer about ${data.aboutPlayer}!`;
+                document.getElementById('answer-input').placeholder = `What do you think ${data.aboutPlayer}'s answer is?`;
+                document.getElementById('answer-input').style.display = 'block';
+                document.getElementById('submit-answer-btn').style.display = 'block';
+            } else {
+                document.getElementById('answer-instruction').textContent = 
+                    `Waiting for ${data.guesser} to guess...`;
+                document.getElementById('answer-input').style.display = 'none';
+                document.getElementById('submit-answer-btn').style.display = 'none';
+            }
+
+            updateScores(data.scores);
+        });
+
+        socket.on('know-me-need-real-answer', (data) => {
+            document.getElementById('answer-instruction').textContent = 
+                `${data.aboutPlayer}, what's the REAL answer?`;
+            document.getElementById('answer-input').style.display = 'block';
+            document.getElementById('answer-input').value = '';
+            document.getElementById('answer-input').disabled = false;
+            document.getElementById('answer-input').placeholder = 'Type the real answer...';
+            document.getElementById('submit-answer-btn').style.display = 'block';
+            document.getElementById('submit-answer-btn').disabled = false;
+            document.getElementById('submit-answer-btn').textContent = 'Reveal! ✨';
+        });
+
+        socket.on('know-me-reveal', (data) => {
+            showScreen('screen-reveal');
+            hasConfirmed = false;
+            document.getElementById('r-question').textContent = data.question;
+            document.getElementById('r-guess-text').textContent = `${data.guesser} said: "${data.guess}"`;
+            document.getElementById('r-real-text').textContent = `${data.aboutPlayer} said: "${data.realAnswer}"`;
+            
+            if (data.correct) {
+                document.getElementById('r-verdict').textContent = '🎉 They know you well!';
+                document.getElementById('r-verdict').style.color = '#00b894';
+            } else {
+                document.getElementById('r-verdict').textContent = '😅 Not quite! Keep learning each other!';
+                document.getElementById('r-verdict').style.color = '#fdcb6e';
+            }
+
+            updateRevealScores(data.scores);
+            document.getElementById('dot1').classList.remove('active');
+            document.getElementById('dot2').classList.remove('active');
+            document.getElementById('next-btn').classList.remove('confirmed');
+            document.getElementById('next-btn').textContent = 'Next Question ➡️';
+            document.getElementById('confirm-text').textContent = isSameDevice ? 'Tap to continue' : 'Both must tap to continue';
+        });
+
+        socket.on('confirmation-update', (data) => {
+            if (data.confirmations >= 1) document.getElementById('dot1').classList.add('active');
+            if (data.confirmations >= 2) document.getElementById('dot2').classList.add('active');
+            if (data.confirmations >= data.needed) document.getElementById('confirm-text').textContent = 'Loading next...';
+        });
+
+        socket.on('error', (data) => {
+            const el = document.getElementById('error-msg');
+            if (el) { el.textContent = data.message; setTimeout(() => { el.textContent = ''; }, 3000); }
+        });
+
+        function updatePlayersList(players) {
+            document.getElementById('players-list').innerHTML = players.map(p => `<span class="player-tag">👤 ${p.name}</span>`).join('');
+        }
+
+        function updateScores(scores) {
+            if (!scores) return;
+            const keys = Object.keys(scores);
+            if (keys[0]) document.getElementById('score-p1').textContent = `${keys[0]}: ${scores[keys[0]]}`;
+            if (keys[1]) document.getElementById('score-p2').textContent = `${keys[1]}: ${scores[keys[1]]}`;
+        }
+
+        function updateRevealScores(scores) {
+            if (!scores) return;
+            const keys = Object.keys(scores);
+            if (keys[0]) document.getElementById('reveal-score-p1').textContent = `${keys[0]}: ${scores[keys[0]]}`;
+            if (keys[1]) document.getElementById('reveal-score-p2').textContent = `${keys[1]}: ${scores[keys[1]]}`;
+        }
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const btn = input.parentElement.querySelector('.btn-primary, .btn'); if (btn && !btn.disabled) btn.click(); } });
+        });
+    </script>
+</body>
+</html>
