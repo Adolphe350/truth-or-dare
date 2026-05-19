@@ -36,20 +36,20 @@
         </div>
 
         <div class="games-grid">
+            <div class="game-card" onclick="go('truth-only')">
+                <div class="icon">🤫</div>
+                <h2 id="c1">Truth Only</h2>
+                <p id="c1d">Deep questions only</p>
+            </div>
             <div class="game-card" onclick="go('know-me')">
                 <div class="icon">💕</div>
-                <h2 id="c1">Know Me?</h2>
-                <p id="c1d">How well do you know each other?</p>
+                <h2 id="c2">Know Me?</h2>
+                <p id="c2d">How well do you know each other?</p>
             </div>
             <div class="game-card" onclick="go('truth-or-dare')">
                 <div class="icon">🔥</div>
-                <h2 id="c2">Truth or Dare</h2>
-                <p id="c2d">Mixed truths & dares</p>
-            </div>
-            <div class="game-card" onclick="go('truth-only')">
-                <div class="icon">🤫</div>
-                <h2 id="c3">Truth Only</h2>
-                <p id="c3d">Deep questions only</p>
+                <h2 id="c3">Truth or Dare</h2>
+                <p id="c3d">Mixed truths & dares</p>
             </div>
             <div class="game-card" onclick="go('dare-only')">
                 <div class="icon">😈</div>
@@ -61,8 +61,8 @@
 
     <script>
         const texts = {
-            en: { tagline: "Party games for two", c1: "Know Me?", c1d: "How well do you know each other?", c2: "Truth or Dare", c2d: "Mixed truths & dares", c3: "Truth Only", c3d: "Deep questions only", c4: "Dare Only", c4d: "Challenges only" },
-            fr: { tagline: "Jeux pour deux", c1: "Tu Me Connais?", c1d: "Tu connais bien l'autre?", c2: "Action ou Vérité", c2d: "Vérités & défis mélangés", c3: "Vérité Seule", c3d: "Questions profondes", c4: "Action Seule", c4d: "Défis seulement" }
+            en: { tagline: "Party games for two", c1: "Truth Only", c1d: "Deep questions only", c2: "Know Me?", c2d: "How well do you know each other?", c3: "Truth or Dare", c3d: "Mixed truths & dares", c4: "Dare Only", c4d: "Challenges only" },
+            fr: { tagline: "Jeux pour deux", c1: "Vérité Seule", c1d: "Questions profondes", c2: "Tu Me Connais?", c2d: "Tu connais bien l'autre?", c3: "Action ou Vérité", c3d: "Vérités & défis mélangés", c4: "Action Seule", c4d: "Défis seulement" }
         };
         let lang = localStorage.getItem('dare-lang') || 'en';
         if (lang === 'rw') lang = 'en'; // remove rw
