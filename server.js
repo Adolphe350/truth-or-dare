@@ -33,8 +33,8 @@ const HOT_TOPICS = [
 ];
 
 const langInstructions = {
-  en: 'Write in simple, plain English. Short sentences. Easy words.',
-  fr: 'Écris en français simple. Phrases courtes. Mots faciles.'
+  en: 'Write in very simple everyday English. Use short words. Short sentences. Anyone should understand it easily.',
+  fr: 'Écris en français très simple. Mots courts. Phrases courtes. Tout le monde doit comprendre facilement.'
 };
 
 const prefixes = {
@@ -151,8 +151,8 @@ async function refillQueue(room) {
   const results = await Promise.allSettled(jobs);
   results.forEach(r => { if (r.status==='fulfilled' && r.value) room.queue.push(r.value); });
   room.refilling = false;
-  // Keep topping up
-  if (room.queue.length < 20) setTimeout(()=>refillQueue(room), 500);
+  // Always keep refilling — game never runs out
+  if (room.queue.length < 20) setTimeout(()=>refillQueue(room), 800);
 }
 
 // ===================== SEND NEXT QUESTION =====================
@@ -160,8 +160,8 @@ async function refillQueue(room) {
 async function sendNextQuestion(room) {
   room.currentRound++;
 
-  // Insert hot take every 6 rounds (after equal answers)
-  if (room.currentRound > 1 && room.currentRound % 6 === 0 && room.hotTopicsUsed < HOT_TOPICS.length) {
+  // Insert hot take every 3 rounds
+  if (room.currentRound > 1 && room.currentRound % 3 === 0 && room.hotTopicsUsed < HOT_TOPICS.length) {
     const topicIdx = room.hotTopicsUsed % HOT_TOPICS.length;
     const topic = HOT_TOPICS[topicIdx];
     room.hotTopicsUsed++;
