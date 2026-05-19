@@ -120,7 +120,6 @@ function enterRoom() {
     myName=n;
     socket.emit('enter-room',{name:n,gameType:GAME_TYPE,lang,code:c});
 }
-}
 
 function copyCode() {
     navigator.clipboard.writeText($('room-code').textContent);
