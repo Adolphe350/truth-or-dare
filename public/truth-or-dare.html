@@ -91,11 +91,13 @@ const lang = new URLSearchParams(location.search).get('lang') || localStorage.ge
 let roomId, myName, confirmed = false, sameDevice = false;
 const $ = id => document.getElementById(id);
 function show(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    // Clear ALL screens including any leftover inline styles
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = '';
+    });
     const el = $(id);
-    // Force iOS layout flush before adding class
-    el.style.display = 'flex';
-    void el.offsetHeight; // trigger reflow
+    void el.offsetWidth; // force iOS reflow
     el.classList.add('active');
 }
 
