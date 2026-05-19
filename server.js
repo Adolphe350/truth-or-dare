@@ -223,7 +223,11 @@ async function sendNextQuestion(room) {
 io.on('connection', (socket) => {
 
   socket.on('create-room', (data) => {
-    let roomId = data.customCode ? sanitizeCode(data.customCode).substring(0,6) : genRoomId();
+    // Custom code: use exactly as typed (uppercase only). Auto-gen uses safe chars.
+    let roomId = data.customCode
+      ? data.customCode.toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,6)
+      : genRoomId();
+    if (!roomId) roomId = genRoomId();
     // If custom code taken, try variations
     if (rooms.has(roomId) && rooms.get(roomId).players.length >= 2) {
       socket.emit('error', { message: 'That code is already in use. Try another.' }); return;
@@ -256,7 +260,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-room', (data) => {
-    const code = sanitizeCode(data.roomId||'');
+    const code = (data.roomId||'').toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,6);
     const room = rooms.get(code);
     if (!room) { socket.emit('error', { message: 'Room not found. Check the code.' }); return; }
     // Allow rejoin if same name

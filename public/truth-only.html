@@ -37,15 +37,15 @@
         <h1>Two Phones</h1>
         <p class="subtitle">Pick a code you both know</p>
         <input type="text" id="my-name" placeholder="Your name…" maxlength="20">
-        <input type="text" id="custom-code" placeholder="Choose a room code… (e.g. ALICE)" maxlength="6"
+        <input type="text" id="custom-code" placeholder="Your room code… e.g. ALICE" maxlength="6"
                style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:1.3rem;font-weight:800;"
-               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')">
-        <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin:-6px 0 10px;text-align:center;">No 0, O, 1, I — use letters & numbers 2-9</p>
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')">
+        <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin:-6px 0 10px;text-align:center;">Letters and numbers only (A-Z, 0-9)</p>
         <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
         <div class="divider"><span>or join existing</span></div>
         <input type="text" id="code-input" placeholder="Enter room code…" maxlength="6"
                style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.5rem;font-weight:800;"
-               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')">
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')">
         <button class="btn btn-secondary" onclick="joinRoom()">Join</button>
         <div class="error-msg" id="err"></div>
         <a href="/" class="back-link">← Back</a>
