@@ -232,8 +232,55 @@ async function sendNextQuestion(room) {
 
 io.on('connection', (socket) => {
 
+  // Unified create-or-join: first player creates, second player joins automatically
+  socket.on('enter-room', (data) => {
+    const roomId = (data.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,6);
+    if (!roomId) { socket.emit('error', { message: 'Enter a room code.' }); return; }
+
+    if (!rooms.has(roomId)) {
+      // Create the room
+      rooms.set(roomId, {
+        id: roomId,
+        gameType: data.gameType||'truth-or-dare',
+        lang: data.lang||'en',
+        players: [],
+        previousQuestions: [],
+        queues: [[], []],
+        confirmations: new Set(),
+        confirmedPlayers: new Set(),
+        sameDevice: false,
+        currentRound: 0,
+        hotTopicsUsed: 0,
+        refilling: false
+      });
+    }
+
+    const room = rooms.get(roomId);
+    if (room.players.length >= 2) {
+      const existing = room.players.find(p => p.name === data.name);
+      if (!existing) { socket.emit('error', { message: 'Room is full!' }); return; }
+      existing.id = socket.id; // rejoin
+    } else {
+      // Remove stale entry for same name then add
+      room.players = room.players.filter(p => p.name !== data.name);
+      room.players.push({ id: socket.id, name: data.name });
+    }
+
+    socket.join(roomId);
+    socket.roomId = roomId;
+    socket.playerName = data.name;
+
+    if (room.players.length === 1) {
+      // First player — show waiting screen
+      socket.emit('room-created', { roomId, players: room.players });
+    } else {
+      // Second player — notify both
+      io.to(roomId).emit('player-joined', { players: room.players, roomId });
+    }
+  });
+
   socket.on('create-room', (data) => {
-    // Custom code: use exactly as typed (uppercase only). Auto-gen uses safe chars.
+    // Legacy same-device path
     let roomId = data.customCode
       ? data.customCode.toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,6)
       : genRoomId();

@@ -35,18 +35,13 @@
     <div class="screen" id="s-diff">
         <div class="logo">📱📱</div>
         <h1>Two Phones</h1>
-        <p class="subtitle">Pick a code you both know</p>
+        <p class="subtitle">Both of you type the same code</p>
         <input type="text" id="my-name" placeholder="Your name…" maxlength="20">
-        <input type="text" id="custom-code" placeholder="Your room code… e.g. ALICE" maxlength="6"
-               style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:1.3rem;font-weight:800;"
+        <input type="text" id="shared-code" placeholder="Room code… e.g. ALICE" maxlength="6"
+               style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:1.5rem;font-weight:800;"
                oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')">
-        <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin:-6px 0 10px;text-align:center;">Letters and numbers only (A-Z, 0-9)</p>
-        <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
-        <div class="divider"><span>or join existing</span></div>
-        <input type="text" id="code-input" placeholder="Enter room code…" maxlength="6"
-               style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.5rem;font-weight:800;"
-               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')">
-        <button class="btn btn-secondary" onclick="joinRoom()">Join</button>
+        <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin:-6px 0 12px;text-align:center;">Pick any code — both of you type the same one</p>
+        <button class="btn btn-primary" onclick="enterRoom()">Enter Room 🚀</button>
         <div class="error-msg" id="err"></div>
         <a href="/" class="back-link">← Back</a>
     </div>
@@ -84,6 +79,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+const GAME_TYPE = 'dare-only';
 const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('dare-lang') || 'en';
 let roomId, myName, confirmed = false, sameDevice = false;
 const $ = id => document.getElementById(id);
@@ -103,19 +99,14 @@ function startSame() {
     socket.once('room-created',d=>{roomId=d.roomId; socket.emit('same-device-mode',{name2:p2});});
 }
 
-function createRoom() {
-    const n=$('my-name').value.trim();
-    const code=($('custom-code').value.trim()||'').toUpperCase();
-    if(!n) return;
+function createRoom() { enterRoom(); }
+function joinRoom()   { enterRoom(); }
+function enterRoom() {
+    const n=$('my-name').value.trim(), c=($('shared-code').value.trim()||'').toUpperCase();
+    if(!n||!c) { $('err').textContent='Enter your name and a room code.'; setTimeout(()=>$('err').textContent='',3000); return; }
     myName=n;
-    socket.emit('create-room',{name:n,gameType:'dare-only',lang, customCode: code||undefined});
-}
-
-function joinRoom() {
-    const n=$('my-name').value.trim(), c=$('code-input').value.trim().toUpperCase();
-    if(!n||!c) return;
-    myName=n;
-    socket.emit('join-room',{roomId:c,name:n});
+    socket.emit('enter-room',{name:n,gameType:GAME_TYPE,lang,code:c});
+});
 }
 
 function copyCode() {
