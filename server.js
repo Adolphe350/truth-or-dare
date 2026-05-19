@@ -145,23 +145,32 @@ async function generateWithGPT(prompt) {
 async function refillQueue(room) {
   if (room.refilling) return;
   room.refilling = true;
-  const needed = 30 - room.queue.length;
-  if (needed <= 0) { room.refilling = false; return; }
-  const batch = Math.min(needed, 10);
-  const jobs = Array.from({length: batch}, (_, i) => {
-    const idx = (room.currentRound + room.queue.length + i + 1) % 2;
-    const otherIdx = (idx+1)%2;
-    if (!room.players[idx] || !room.players[otherIdx]) return null;
-    const target = room.players[idx].name;
-    const other  = room.players[otherIdx].name;
-    if (room.gameType === 'know-me') return generateKnowMe(target, other, room.previousQuestions, room.lang).catch(()=>null);
-    return generateTruthOrDare(target, room.previousQuestions, room.lang, room.gameType).catch(()=>null);
-  }).filter(Boolean);
-  const results = await Promise.allSettled(jobs);
-  results.forEach(r => { if (r.status==='fulfilled' && r.value) room.queue.push(r.value); });
+  // Fill each player's queue up to 15 questions
+  const jobs = [];
+  for (let pidx = 0; pidx < 2; pidx++) {
+    const needed = 15 - (room.queues[pidx]||[]).length;
+    if (needed <= 0) continue;
+    const target = room.players[pidx]?.name;
+    const other  = room.players[(pidx+1)%2]?.name;
+    if (!target || !other) continue;
+    for (let i = 0; i < Math.min(needed, 5); i++) {
+      if (room.gameType === 'know-me')
+        jobs.push({ pidx, p: generateKnowMe(target, other, room.previousQuestions, room.lang).catch(()=>null) });
+      else
+        jobs.push({ pidx, p: generateTruthOrDare(target, room.previousQuestions, room.lang, room.gameType).catch(()=>null) });
+    }
+  }
+  const results = await Promise.allSettled(jobs.map(j=>j.p));
+  results.forEach((r, i) => {
+    if (r.status==='fulfilled' && r.value) {
+      if (!room.queues[jobs[i].pidx]) room.queues[jobs[i].pidx] = [];
+      room.queues[jobs[i].pidx].push(r.value);
+    }
+  });
   room.refilling = false;
-  // Always keep refilling — game never runs out
-  if (room.queue.length < 20) setTimeout(()=>refillQueue(room), 800);
+  // Always keep refilling
+  const minQ = Math.min((room.queues[0]||[]).length, (room.queues[1]||[]).length);
+  if (minQ < 10) setTimeout(()=>refillQueue(room), 800);
 }
 
 // ===================== SEND NEXT QUESTION =====================
@@ -194,10 +203,10 @@ async function sendNextQuestion(room) {
   const target = room.players[idx];
   const other  = room.players[otherIdx];
 
-  // Pop from pre-generated queue if available (instant!)
+  // Pop from this player's dedicated queue — correct name guaranteed
   let question;
-  if (room.queue.length > 0) {
-    question = room.queue.shift();
+  if (room.queues && room.queues[idx] && room.queues[idx].length > 0) {
+    question = room.queues[idx].shift();
   } else {
     // Fallback: generate on the fly
     if (room.gameType === 'know-me') question = await generateKnowMe(target.name, other.name, room.previousQuestions, room.lang);
@@ -205,8 +214,9 @@ async function sendNextQuestion(room) {
   }
   room.previousQuestions.push(question);
 
-  // Refill queue in background
-  if (room.queue.length < 15) setImmediate(()=>refillQueue(room));
+  // Refill both queues in background
+  const minQ = Math.min((room.queues?.[0]||[]).length, (room.queues?.[1]||[]).length);
+  if (minQ < 8) setImmediate(()=>refillQueue(room));
 
   io.to(room.id).emit('new-question', {
     question,
@@ -240,7 +250,7 @@ io.on('connection', (socket) => {
         lang: data.lang||'en',
         players: [],
         previousQuestions: [],
-        queue: [],
+        queues: [[], []], // one queue per player index
         confirmations: new Set(),
         confirmedPlayers: new Set(),
         sameDevice: data.sameDevice||false,
