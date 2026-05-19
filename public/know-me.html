@@ -119,7 +119,7 @@ function enterRoom() {
     if(!n||!c) { $('err').textContent='Enter your name and a room code.'; setTimeout(()=>$('err').textContent='',3000); return; }
     myName=n;
     socket.emit('enter-room',{name:n,gameType:GAME_TYPE,lang,code:c});
-});
+}
 }
 
 function copyCode() {
