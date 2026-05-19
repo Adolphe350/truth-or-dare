@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dare AI — Party Games Powered by AI</title>
+    <title>Dare AI — Party Games</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,90 +24,118 @@
             text-align: center;
         }
         .hero-emoji { font-size: 4rem; margin-bottom: 15px; animation: bounce 2s infinite; }
-        @keyframes bounce {
-            0%,100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
+        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         h1 {
-            font-size: 2.8rem;
-            font-weight: 900;
+            font-size: 2.8rem; font-weight: 900;
             background: linear-gradient(to right, #ff6b6b, #feca57, #ff6b6b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             margin-bottom: 8px;
         }
-        .tagline { color: #a8a8d8; font-size: 1rem; margin-bottom: 40px; }
-        .games-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            max-width: 700px;
-            width: 100%;
+        .tagline { color: #a8a8d8; font-size: 1rem; margin-bottom: 30px; }
+        
+        .lang-select {
+            display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;
         }
+        .lang-btn {
+            padding: 10px 20px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.03); color: #a8a8d8; font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s;
+        }
+        .lang-btn:hover, .lang-btn.selected { border-color: #feca57; color: #feca57; background: rgba(254,202,87,0.1); }
+
+        .games-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 700px; width: 100%; }
         .game-card {
-            flex: 1 1 280px;
-            max-width: 320px;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 24px;
-            padding: 30px 24px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
+            flex: 1 1 280px; max-width: 320px;
+            background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 30px 24px; cursor: pointer; transition: all 0.3s; text-align: center;
         }
-        .game-card:hover {
-            border-color: #ff6b6b;
-            background: rgba(255,107,107,0.05);
-            transform: translateY(-5px);
-            box-shadow: 0 20px 60px rgba(255,107,107,0.15);
-        }
+        .game-card:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.05); transform: translateY(-5px); box-shadow: 0 20px 60px rgba(255,107,107,0.15); }
         .game-card .icon { font-size: 3rem; margin-bottom: 15px; }
         .game-card h2 { font-size: 1.3rem; margin-bottom: 8px; }
         .game-card p { color: #a8a8d8; font-size: 0.85rem; line-height: 1.5; }
-        .game-card .badge {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            background: rgba(255,107,107,0.2);
-            color: #ff6b6b;
-        }
-        .footer {
-            margin-top: 50px;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.75rem;
-        }
-        .footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+        .game-card .badge { display: inline-block; margin-top: 12px; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: rgba(255,107,107,0.2); color: #ff6b6b; }
+        .footer { margin-top: 50px; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
     </style>
 </head>
 <body>
     <div class="landing">
         <div class="hero-emoji">🎲</div>
         <h1>Dare AI</h1>
-        <p class="tagline">Party games powered by AI • No mercy • Two players</p>
+        <p class="tagline" id="tagline">Party games for two • No mercy</p>
+
+        <div class="lang-select">
+            <button class="lang-btn selected" onclick="setLang('en')">🇬🇧 English</button>
+            <button class="lang-btn" onclick="setLang('fr')">🇫🇷 Français</button>
+            <button class="lang-btn" onclick="setLang('rw')">🇷🇼 Ikinyarwanda</button>
+        </div>
 
         <div class="games-grid">
-            <div class="game-card" onclick="window.location.href='/know-me'">
+            <div class="game-card" onclick="go('know-me')">
                 <div class="icon">💕</div>
-                <h2>How Well Do You Know Me?</h2>
-                <p>Test your bond! Questions about your partner — guess their favorites, secrets & memories. See who really knows who.</p>
-                <span class="badge">🔥 POPULAR</span>
+                <h2 id="card1-title">How Well Do You Know Me?</h2>
+                <p id="card1-desc">Test your bond! Guess each other's favorites, secrets & memories.</p>
+                <span class="badge">🔥</span>
             </div>
 
-            <div class="game-card" onclick="window.location.href='/truth-or-dare'">
+            <div class="game-card" onclick="go('truth-or-dare')">
                 <div class="icon">🔥</div>
-                <h2>Truth or Dare</h2>
-                <p>Savage truths & wild dares. Family, exes, faith, spicy — all categories mixed. Both must tap to continue.</p>
+                <h2 id="card2-title">Truth or Dare</h2>
+                <p id="card2-desc">Savage truths & wild dares. All topics mixed. Both tap to continue.</p>
                 <span class="badge">CLASSIC</span>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Fresh questions every time • Never repeats</p>
-        </div>
+        <div class="footer"><p>Fresh questions every time</p></div>
     </div>
+
+    <script>
+        const texts = {
+            en: {
+                tagline: "Party games for two • No mercy",
+                card1Title: "How Well Do You Know Me?",
+                card1Desc: "Test your bond! Guess each other's favorites, secrets & memories.",
+                card2Title: "Truth or Dare",
+                card2Desc: "Savage truths & wild dares. All topics mixed. Both tap to continue."
+            },
+            fr: {
+                tagline: "Jeux pour deux • Sans pitié",
+                card1Title: "Tu Me Connais Bien ?",
+                card1Desc: "Teste ton lien ! Devine les secrets, préférences et souvenirs de l'autre.",
+                card2Title: "Action ou Vérité",
+                card2Desc: "Vérités brutales & défis fous. Tous les sujets mélangés."
+            },
+            rw: {
+                tagline: "Imikino y'abantu babiri • Nta mbabazi",
+                card1Title: "Uzi Ibyanye?",
+                card1Desc: "Reba neza umenya mugenzi wawe! Tekerereza ibihe akunda, ibanga rye n'ibyibutso bye.",
+                card2Title: "Ukuri cyangwa Igihano",
+                card2Desc: "Ukuri gukaze & ibihano bikomeye. Ibibazo byose bivanze."
+            }
+        };
+
+        let currentLang = localStorage.getItem('dare-lang') || 'en';
+        updateLang();
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('dare-lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+            updateLang();
+        }
+
+        function updateLang() {
+            const t = texts[currentLang];
+            document.getElementById('tagline').textContent = t.tagline;
+            document.getElementById('card1-title').textContent = t.card1Title;
+            document.getElementById('card1-desc').textContent = t.card1Desc;
+            document.getElementById('card2-title').textContent = t.card2Title;
+            document.getElementById('card2-desc').textContent = t.card2Desc;
+        }
+
+        function go(page) {
+            window.location.href = `/${page}?lang=${currentLang}`;
+        }
+    </script>
 </body>
 </html>

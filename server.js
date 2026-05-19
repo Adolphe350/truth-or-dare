@@ -11,64 +11,72 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.json());
-
-// Route pages
 app.get('/truth-or-dare', (req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-or-dare.html')));
 app.get('/know-me', (req, res) => res.sendFile(path.join(__dirname, 'public', 'know-me.html')));
-
-// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Game rooms
 const rooms = new Map();
 
 // ===================== AI =====================
 
-async function generateTruthOrDare(playerName, category, previousQuestions = []) {
-  const categories = ['family secrets', 'sexual experiences', 'critical thinking dilemmas', 'Christian faith & morality', 'ex relationships', 'embarrassing moments', 'deep fears', 'wild fantasies', 'controversial opinions', 'childhood memories', 'future dreams', 'guilty pleasures', 'friendship loyalty', 'money & greed', 'love & heartbreak'];
-  const selectedCategory = category || categories[Math.floor(Math.random() * categories.length)];
-  
-  const prompt = `You are the host of an intense Truth or Dare game between two close friends/partners. Generate ONE ${Math.random() > 0.3 ? 'truth question' : 'dare challenge'} for ${playerName}.
+const langInstructions = {
+  en: 'Write in simple English. Use easy words that anyone can understand. Short sentences.',
+  fr: 'Écris en français simple. Utilise des mots faciles que tout le monde comprend. Phrases courtes.',
+  rw: 'Andika mu Kinyarwanda kisanzwe. Koresha amagambo yoroshye umuntu wese ashobora kumva. Interuro ngufi.'
+};
 
-Category: ${selectedCategory}
+const truthDarePrefix = {
+  en: { truth: 'TRUTH:', dare: 'DARE:' },
+  fr: { truth: 'VÉRITÉ:', dare: 'ACTION:' },
+  rw: { truth: 'UKURI:', dare: 'IGIHANO:' }
+};
+
+async function generateTruthOrDare(playerName, previousQuestions = [], lang = 'en') {
+  const categories = ['family', 'sex', 'faith/church', 'ex relationships', 'embarrassing moments', 'fears', 'fantasies', 'opinions', 'childhood', 'dreams', 'guilty pleasures', 'loyalty', 'money', 'love & heartbreak'];
+  const category = categories[Math.floor(Math.random() * categories.length)];
+  const isTruth = Math.random() > 0.3;
+  const prefix = truthDarePrefix[lang] || truthDarePrefix.en;
+  const langNote = langInstructions[lang] || langInstructions.en;
+
+  const prompt = `You host a Truth or Dare game for two close people. Generate ONE ${isTruth ? 'truth question' : 'dare'} for ${playerName}.
+
+Topic: ${category}
+
+${langNote}
 
 Rules:
-- Be creative, provocative, and fun
-- Questions should be personal and revealing
-- Dares should be doable but embarrassing/thrilling
-- Don't repeat: ${previousQuestions.slice(-5).join('; ')}
-- Address the player by name
-- Keep to 1-2 sentences
-- Mix spicy, deep, funny, uncomfortable
-- For truths: something they'd never admit
-- For dares: something memorable
+- ${isTruth ? 'Ask something personal they would not normally admit' : 'Give a fun dare they can do right now'}
+- Use the player name
+- 1 sentence only
+- Be creative, fun, a bit provocative
+- Do NOT repeat: ${previousQuestions.slice(-5).join(' | ')}
 
-Respond with ONLY "TRUTH:" or "DARE:" followed by the question/challenge. Nothing else.`;
+Reply with ONLY "${isTruth ? prefix.truth : prefix.dare}" followed by the question/dare. Nothing else.`;
 
   return await callAI(prompt);
 }
 
-async function generateKnowMeQuestion(aboutPlayer, guesser, previousQuestions = []) {
-  const prompt = `You are hosting a "How Well Do You Know Me?" game between two people. Generate ONE question about ${aboutPlayer} that ${guesser} has to guess the answer to out loud.
+async function generateKnowMeQuestion(aboutPlayer, guesser, previousQuestions = [], lang = 'en') {
+  const langNote = langInstructions[lang] || langInstructions.en;
 
-Don't repeat: ${previousQuestions.slice(-5).join('; ')}
+  const prompt = `You host a "How Well Do You Know Me?" game. Generate ONE question about ${aboutPlayer} that ${guesser} must guess.
 
-Topics to draw from (pick one randomly each time): favorite color, favorite food, dream vacation, biggest fear, church name, first crush, most embarrassing moment, favorite movie, pet peeve, guilty pleasure food, favorite song, childhood nickname, secret talent, worst date, comfort food, dream job as a kid, favorite Bible verse, most-listened artist, biggest insecurity, favorite childhood memory, ideal date night, worst habit, favorite season, go-to show, biggest regret, love language, morning or night person, cats or dogs, number of exes, last person texted, most used app, hidden talent, biggest turn-off, dealbreaker, favorite holiday, first job, worst fear, favorite meal to cook, strangest habit, most prized possession
+${langNote}
+
+Topics (pick one): favorite color, favorite food, dream place, biggest fear, church, first crush, embarrassing moment, favorite movie, pet peeve, guilty pleasure, favorite song, nickname, talent, worst date, comfort food, dream job, favorite verse, favorite artist, insecurity, childhood memory, ideal date, worst habit, favorite season, favorite show, regret, love language, morning/night person, cats/dogs, number of exes, most used app, turn-off, dealbreaker
 
 Rules:
-- Make it personal and fun
-- One clear question
-- Frame as "What is ${aboutPlayer}'s..." or "How many..." or "Who is ${aboutPlayer}'s..."
-- Mix easy and hard
-- Keep it short
+- Simple words
+- 1 short question
+- Format: "What is ${aboutPlayer}'s..." or "Who..." or "How many..."
+- Do NOT repeat: ${previousQuestions.slice(-5).join(' | ')}
 
-Respond with ONLY the question text. Nothing else.`;
+Reply ONLY with the question. Nothing else.`;
 
   return await callAI(prompt);
 }
 
 async function callAI(prompt) {
-  // Always try Claude first (more creative), fall back to GPT
   try {
     return await generateWithClaude(prompt);
   } catch (err) {
@@ -76,8 +84,8 @@ async function callAI(prompt) {
     try {
       return await generateWithGPT(prompt);
     } catch (err2) {
-      console.error('GPT also failed:', err2.message);
-      return 'TRUTH: What is the most embarrassing thing you have never told anyone?';
+      console.error('GPT failed:', err2.message);
+      return 'TRUTH: What is your biggest secret?';
     }
   }
 }
@@ -91,7 +99,7 @@ async function generateWithClaude(prompt) {
   const response = await client.send(new ConverseCommand({
     modelId: 'us.anthropic.claude-sonnet-4-6',
     messages: [{ role: 'user', content: [{ text: prompt }] }],
-    inferenceConfig: { maxTokens: 150, temperature: 1.0 }
+    inferenceConfig: { maxTokens: 100, temperature: 1.0 }
   }));
   return response.output.message.content[0].text.trim();
 }
@@ -99,13 +107,13 @@ async function generateWithClaude(prompt) {
 async function generateWithGPT(prompt) {
   const response = await axios.post(
     `${process.env.AZURE_FOUNDRY_ENDPOINT}/chat/completions`,
-    { model: 'gpt-5.5-1', messages: [{ role: 'user', content: prompt }], max_completion_tokens: 150, temperature: 1.1 },
+    { model: 'gpt-5.5-1', messages: [{ role: 'user', content: prompt }], max_completion_tokens: 100, temperature: 1.1 },
     { headers: { 'Content-Type': 'application/json', 'api-key': process.env.AZURE_FOUNDRY_KEY }, timeout: 30000 }
   );
   return response.data.choices[0].message.content.trim();
 }
 
-// ===================== SOCKET.IO =====================
+// ===================== SOCKET =====================
 
 io.on('connection', (socket) => {
 
@@ -114,6 +122,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, {
       id: roomId,
       gameType: data.gameType || 'truth-or-dare',
+      lang: data.lang || 'en',
       players: [{ id: socket.id, name: data.name }],
       previousQuestions: [],
       confirmations: new Set(),
@@ -122,18 +131,16 @@ io.on('connection', (socket) => {
     });
     socket.join(roomId);
     socket.roomId = roomId;
-    socket.playerName = data.name;
     socket.emit('room-created', { roomId, players: rooms.get(roomId).players });
   });
 
   socket.on('join-room', (data) => {
     const room = rooms.get(data.roomId);
-    if (!room) { socket.emit('error', { message: 'Room not found! Check the code.' }); return; }
-    if (room.players.length >= 2) { socket.emit('error', { message: 'Room is full!' }); return; }
+    if (!room) { socket.emit('error', { message: 'Room not found!' }); return; }
+    if (room.players.length >= 2) { socket.emit('error', { message: 'Room full!' }); return; }
     room.players.push({ id: socket.id, name: data.name });
     socket.join(data.roomId);
     socket.roomId = data.roomId;
-    socket.playerName = data.name;
     io.to(data.roomId).emit('player-joined', { players: room.players, roomId: data.roomId });
   });
 
@@ -146,27 +153,23 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('start-game', async (data) => {
+  socket.on('start-game', async () => {
     const room = rooms.get(socket.roomId);
     if (!room || room.players.length < 2) return;
     room.confirmations.clear();
     await sendNextQuestion(room);
   });
 
-  socket.on('confirm-next', async (data) => {
+  socket.on('confirm-next', async () => {
     const room = rooms.get(socket.roomId);
     if (!room) return;
-    
-    // For same device, always count (use unique key each time)
     if (room.sameDevice) {
       room.confirmations.add(`${socket.id}-${Date.now()}`);
     } else {
       room.confirmations.add(socket.id);
     }
-    
     const needed = room.sameDevice ? 1 : 2;
     io.to(socket.roomId).emit('confirmation-update', { confirmations: room.confirmations.size, needed });
-
     if (room.confirmations.size >= needed) {
       room.confirmations.clear();
       await sendNextQuestion(room);
@@ -187,35 +190,27 @@ io.on('connection', (socket) => {
 
 async function sendNextQuestion(room) {
   room.currentRound++;
-  const playerIdx = room.currentRound % 2;
-  const otherIdx = (playerIdx + 1) % 2;
-  const targetPlayer = room.players[playerIdx];
-  const otherPlayer = room.players[otherIdx];
+  const idx = room.currentRound % 2;
+  const otherIdx = (idx + 1) % 2;
+  const target = room.players[idx];
+  const other = room.players[otherIdx];
 
   let question;
   if (room.gameType === 'know-me') {
-    question = await generateKnowMeQuestion(targetPlayer.name, otherPlayer.name, room.previousQuestions);
-    room.previousQuestions.push(question);
-    io.to(room.id).emit('new-question', {
-      question,
-      targetPlayer: targetPlayer.name,
-      guesser: otherPlayer.name,
-      confirmations: 0,
-      needed: room.sameDevice ? 1 : 2
-    });
+    question = await generateKnowMeQuestion(target.name, other.name, room.previousQuestions, room.lang);
   } else {
-    question = await generateTruthOrDare(targetPlayer.name, null, room.previousQuestions);
-    room.previousQuestions.push(question);
-    io.to(room.id).emit('new-question', {
-      question,
-      targetPlayer: targetPlayer.name,
-      confirmations: 0,
-      needed: room.sameDevice ? 1 : 2
-    });
+    question = await generateTruthOrDare(target.name, room.previousQuestions, room.lang);
   }
+  room.previousQuestions.push(question);
+  io.to(room.id).emit('new-question', {
+    question,
+    targetPlayer: target.name,
+    guesser: other.name,
+    confirmations: 0,
+    needed: room.sameDevice ? 1 : 2
+  });
 }
 
-// Cleanup old rooms
 setInterval(() => { for (const [id, room] of rooms) { if (room.players.length === 0) rooms.delete(id); } }, 30 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
