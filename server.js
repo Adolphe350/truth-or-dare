@@ -15,6 +15,15 @@ app.get('/truth-or-dare', (req, res) => res.sendFile(path.join(__dirname, 'publi
 app.get('/know-me',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'know-me.html')));
 app.get('/truth-only',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-only.html')));
 app.get('/dare-only',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'dare-only.html')));
+app.get('/test-ai',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'test-ai.html')));
+app.post('/api/test-ai',  async (req, res) => {
+  try {
+    const q1 = await generateTruthOrDare('Alice', [], 'en', 'truth-or-dare');
+    const q2 = await generateTruthOrDare('Bob',   [q1], 'en', 'dare-only');
+    const q3 = await generateKnowMe('Alice', 'Bob', [q1,q2], 'en');
+    res.json({ ok:true, questions:[q1,q2,q3] });
+  } catch(e) { res.json({ ok:false, error:e.message }); }
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ===================== CONSTANTS =====================
@@ -117,7 +126,7 @@ async function generateWithClaude(prompt) {
   const r = await client.send(new ConverseCommand({
     modelId: 'us.anthropic.claude-sonnet-4-6',
     messages: [{ role:'user', content:[{ text: prompt }] }],
-    inferenceConfig: { maxTokens:120, temperature:1.05 }
+    inferenceConfig: { maxTokens:120, temperature:0.99 }
   }));
   return r.output.message.content[0].text.trim();
 }
@@ -125,7 +134,7 @@ async function generateWithClaude(prompt) {
 async function generateWithGPT(prompt) {
   const r = await axios.post(
     `${process.env.AZURE_FOUNDRY_ENDPOINT}/chat/completions`,
-    { model:'gpt-5.5-1', messages:[{role:'user',content:prompt}], max_completion_tokens:120, temperature:1.1 },
+    { model:'gpt-5.5-1', messages:[{role:'user',content:prompt}], max_completion_tokens:120, temperature:1.0 },
     { headers:{'Content-Type':'application/json','api-key':process.env.AZURE_FOUNDRY_KEY}, timeout:30000 }
   );
   return r.data.choices[0].message.content.trim();

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Inter',sans-serif;min-height:100vh;background:#0a0a0f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(120,40,200,0.28) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 80% 80%,rgba(255,60,100,0.2) 0%,transparent 55%);pointer-events:none;z-index:0;}
+        .wrap{max-width:500px;width:100%;position:relative;z-index:1;text-align:center;}
+        h1{font-size:1.8rem;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,#fff,rgba(200,150,255,0.9));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .sub{color:rgba(255,255,255,0.35);font-size:0.82rem;margin-bottom:30px;}
+        .btn{width:100%;padding:16px;background:linear-gradient(135deg,#a03cff,#ff3c64);border:none;border-radius:16px;color:white;font-size:1rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.25s;}
+        .btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(160,60,255,0.4);}
+        .btn:disabled{opacity:0.5;cursor:default;transform:none;}
+        .result{margin-top:20px;text-align:left;}
+        .q-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:16px 20px;margin-bottom:12px;font-size:0.9rem;line-height:1.6;animation:fadeIn 0.4s ease;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .q-label{font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:6px;}
+        .status{padding:12px;border-radius:12px;font-size:0.85rem;margin-bottom:16px;font-weight:600;}
+        .status.ok{background:rgba(0,200,150,0.15);border:1px solid rgba(0,200,150,0.3);color:#86efac;}
+        .status.fail{background:rgba(255,60,80,0.15);border:1px solid rgba(255,60,80,0.3);color:#fca5a5;}
+        .loading{display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.2);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .back{display:inline-block;margin-top:20px;color:rgba(255,255,255,0.3);font-size:0.82rem;text-decoration:none;padding:8px 20px;border:1px solid rgba(255,255,255,0.1);border-radius:12px;}
+        .back:hover{color:rgba(255,255,255,0.7);}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>🧪 AI Test</h1>
+    <p class="sub">Tests Claude Sonnet 4.6 — generates 3 questions live</p>
+    <button class="btn" id="btn" onclick="runTest()">Run AI Test</button>
+    <div id="out"></div>
+    <a href="/" class="back">← Back to games</a>
+</div>
+<script>
+async function runTest() {
+    const btn = document.getElementById('btn');
+    const out = document.getElementById('out');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Testing AI…';
+    out.innerHTML = '';
+    try {
+        const res = await fetch('/api/test-ai', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+        const data = await res.json();
+        if (data.ok) {
+            out.innerHTML = `<div class="status ok">✅ AI is working! Generated ${data.questions.length} unique questions.</div>` +
+                data.questions.map((q,i) => `<div class="q-item"><div class="q-label">Question ${i+1}</div>${q}</div>`).join('');
+        } else {
+            out.innerHTML = `<div class="status fail">❌ AI failed: ${data.error}</div>`;
+        }
+    } catch(e) {
+        out.innerHTML = `<div class="status fail">❌ Error: ${e.message}</div>`;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Run Again';
+}
+</script>
+</body>
+</html>

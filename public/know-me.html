@@ -188,7 +188,7 @@ socket.on('player-joined', d=>{
     if(d.players.length>=2){
         $('wait-text').textContent='Both here! 🎉';
         $('start-btn').style.display='block';
-        if(sameDevice){ show('s-wait'); setTimeout(startGame,400); }
+        if(sameDevice){ show('s-loading'); startGame(); }
     }
 });
 

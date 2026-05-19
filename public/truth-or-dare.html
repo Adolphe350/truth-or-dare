@@ -51,6 +51,13 @@
         <a href="/" class="back-link">← Back</a>
     </div>
 
+    <!-- Loading screen for same-device -->
+    <div class="screen" id="s-loading">
+        <div class="logo">⏳</div>
+        <h1>Getting ready…</h1>
+        <p class="subtitle">Preparing your questions</p>
+    </div>
+
     <div class="screen" id="s-wait">
         <div class="logo">⏳</div>
         <h1>Waiting…</h1>
@@ -184,7 +191,7 @@ socket.on('player-joined', d=>{
     if(d.players.length>=2){
         $('wait-text').textContent='Both here! 🎉';
         $('start-btn').style.display='block';
-        if(sameDevice){ show('s-wait'); setTimeout(startGame,400); }
+        if(sameDevice){ show('s-loading'); startGame(); }
     }
 });
 
