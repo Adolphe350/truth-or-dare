@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Truth or Dare AI 🔥</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(to right, #ff6b6b, #feca57, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #a8a8d8;
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .screen { display: none; width: 100%; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+        input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 1.1rem;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        input:focus {
+            border-color: #ff6b6b;
+            background: rgba(255,107,107,0.05);
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 8px 32px rgba(255,107,107,0.3);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,107,107,0.4); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            box-shadow: 0 8px 32px rgba(0,184,148,0.3);
+            font-size: 1.3rem;
+            padding: 20px;
+        }
+
+        .btn-confirm:hover { transform: translateY(-2px); }
+        .btn-confirm.confirmed { 
+            background: rgba(0,184,148,0.3);
+            cursor: default;
+            transform: none;
+        }
+
+        .room-code {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .room-code .code {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 8px;
+            color: #feca57;
+        }
+
+        .room-code .label {
+            font-size: 0.8rem;
+            color: #a8a8d8;
+            margin-bottom: 5px;
+        }
+
+        .players-list {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .player-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,107,107,0.2);
+            border: 1px solid rgba(255,107,107,0.4);
+            border-radius: 20px;
+            margin: 4px;
+            font-size: 0.9rem;
+        }
+
+        .question-card {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 30px 24px;
+            margin: 20px 0;
+            text-align: center;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-card .target {
+            font-size: 0.85rem;
+            color: #feca57;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .question-card .type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .type-truth { background: #6c5ce7; }
+        .type-dare { background: #e17055; }
+
+        .question-card .text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .confirmation-bar {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #a8a8d8;
+        }
+
+        .confirmation-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .confirmation-dot.active { background: #00b894; box-shadow: 0 0 10px #00b894; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin: 15px 0;
+            color: #a8a8d8;
+            font-size: 0.8rem;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .divider span { padding: 0 12px; }
+
+        .mode-select {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 20px 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.03);
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.05); }
+        .mode-btn.selected { border-color: #ff6b6b; background: rgba(255,107,107,0.1); }
+        .mode-btn .icon { font-size: 2rem; margin-bottom: 8px; }
+        .mode-btn .label { font-size: 0.85rem; font-weight: 600; }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ff6b6b;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            text-align: center;
+        }
+
+        .waiting-text {
+            color: #a8a8d8;
+            font-size: 0.9rem;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #a8a8d8;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .copy-btn:hover { border-color: #feca57; color: #feca57; }
+
+        .ai-badge {
+            font-size: 0.7rem;
+            color: #a8a8d8;
+            margin-top: 15px;
+            opacity: 0.6;
+        }
+
+        .category-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.03);
+            color: #a8a8d8;
+            transition: all 0.2s;
+        }
+
+        .chip:hover, .chip.selected {
+            border-color: #ff6b6b;
+            background: rgba(255,107,107,0.1);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SCREEN 1: Welcome -->
+        <div class="screen active" id="screen-welcome">
+            <div class="logo">🎲</div>
+            <h1>Truth or Dare</h1>
+            <p class="subtitle">AI-powered • No mercy • Two players</p>
+            
+            <div class="mode-select">
+                <div class="mode-btn" id="mode-same" onclick="selectMode('same')">
+                    <div class="icon">📱</div>
+                    <div class="label">Same Device</div>
+                </div>
+                <div class="mode-btn" id="mode-diff" onclick="selectMode('different')">
+                    <div class="icon">📱📱</div>
+                    <div class="label">Different Devices</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2a: Same Device Setup -->
+        <div class="screen" id="screen-same-setup">
+            <div class="logo">📱</div>
+            <h1>Same Device</h1>
+            <p class="subtitle">Enter both player names</p>
+            <input type="text" id="player1-name" placeholder="Player 1 name..." maxlength="20">
+            <input type="text" id="player2-name" placeholder="Player 2 name..." maxlength="20">
+            <button class="btn btn-primary" onclick="startSameDevice()">Let's Go! 🔥</button>
+        </div>
+
+        <!-- SCREEN 2b: Different Devices - Create/Join -->
+        <div class="screen" id="screen-diff-setup">
+            <div class="logo">📱📱</div>
+            <h1>Different Devices</h1>
+            <p class="subtitle">One creates, one joins</p>
+            <input type="text" id="my-name" placeholder="Your name..." maxlength="20">
+            <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+            <div class="divider"><span>or</span></div>
+            <input type="text" id="room-input" placeholder="Enter room code..." maxlength="6" style="text-transform: uppercase; text-align: center; letter-spacing: 4px; font-size: 1.4rem;">
+            <button class="btn btn-secondary" onclick="joinRoom()">Join Room</button>
+            <div class="error-msg" id="error-msg"></div>
+        </div>
+
+        <!-- SCREEN 3: Waiting Room -->
+        <div class="screen" id="screen-waiting">
+            <div class="logo">⏳</div>
+            <h1>Waiting Room</h1>
+            <div class="room-code">
+                <div class="label">SHARE THIS CODE</div>
+                <div class="code" id="display-room-code">------</div>
+                <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
+            </div>
+            <div class="players-list" id="players-list"></div>
+            <p class="waiting-text" id="waiting-text">Waiting for second player...</p>
+            <button class="btn btn-primary" id="start-btn" style="display:none;" onclick="startGame()">Start Game! 🎲</button>
+        </div>
+
+        <!-- SCREEN 4: Game -->
+        <div class="screen" id="screen-game">
+            <div class="question-card" id="question-card">
+                <div class="target" id="q-target">Loading...</div>
+                <div class="type" id="q-type">...</div>
+                <div class="text" id="q-text">Generating question...</div>
+                <div class="ai-badge">⚡ powered by AI</div>
+            </div>
+
+            <div class="category-chips" id="category-chips">
+                <div class="chip" onclick="selectCategory(this, 'random')">🎲 Random</div>
+                <div class="chip" onclick="selectCategory(this, 'sexual experiences')">🔥 Spicy</div>
+                <div class="chip" onclick="selectCategory(this, 'family secrets')">👨‍👩‍👧 Family</div>
+                <div class="chip" onclick="selectCategory(this, 'Christian faith & morality')">✝️ Faith</div>
+                <div class="chip" onclick="selectCategory(this, 'ex relationships')">💔 Exes</div>
+                <div class="chip" onclick="selectCategory(this, 'deep fears')">😱 Deep</div>
+                <div class="chip" onclick="selectCategory(this, 'controversial opinions')">🤔 Hot Takes</div>
+            </div>
+
+            <div class="confirmation-bar" id="confirm-bar">
+                <div class="confirmation-dot" id="dot1"></div>
+                <div class="confirmation-dot" id="dot2"></div>
+                <span id="confirm-text">Both must tap to continue</span>
+            </div>
+
+            <button class="btn btn-confirm" id="next-btn" onclick="confirmNext()">
+                Next Question ➡️
+            </button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentMode = null;
+        let roomId = null;
+        let myName = '';
+        let selectedCategory = null;
+        let hasConfirmed = false;
+        let isSameDevice = false;
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById(`mode-${mode === 'same' ? 'same' : 'diff'}`).classList.add('selected');
+            setTimeout(() => {
+                showScreen(mode === 'same' ? 'screen-same-setup' : 'screen-diff-setup');
+            }, 300);
+        }
+
+        function selectCategory(el, cat) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedCategory = cat === 'random' ? null : cat;
+        }
+
+        // Same device mode
+        function startSameDevice() {
+            const p1 = document.getElementById('player1-name').value.trim();
+            const p2 = document.getElementById('player2-name').value.trim();
+            if (!p1 || !p2) return;
+            
+            isSameDevice = true;
+            myName = p1;
+            
+            socket.emit('create-room', { name: p1, sameDevice: true });
+            socket.once('room-created', (data) => {
+                roomId = data.roomId;
+                socket.emit('same-device-mode', { name2: p2 });
+            });
+        }
+
+        // Different devices mode
+        function createRoom() {
+            const name = document.getElementById('my-name').value.trim();
+            if (!name) return;
+            myName = name;
+            socket.emit('create-room', { name });
+        }
+
+        function joinRoom() {
+            const name = document.getElementById('my-name').value.trim();
+            const code = document.getElementById('room-input').value.trim().toUpperCase();
+            if (!name || !code) return;
+            myName = name;
+            socket.emit('join-room', { roomId: code, name });
+        }
+
+        function copyCode() {
+            const code = document.getElementById('display-room-code').textContent;
+            navigator.clipboard.writeText(code);
+            document.querySelector('.copy-btn').textContent = '✅ Copied!';
+            setTimeout(() => { document.querySelector('.copy-btn').textContent = '📋 Copy Code'; }, 2000);
+        }
+
+        function startGame() {
+            socket.emit('start-game', { category: selectedCategory });
+            document.getElementById('start-btn').innerHTML = '<span class="loading"></span> Generating...';
+        }
+
+        function confirmNext() {
+            if (hasConfirmed) return;
+            hasConfirmed = true;
+            document.getElementById('next-btn').classList.add('confirmed');
+            document.getElementById('next-btn').textContent = '✅ Waiting for other player...';
+            socket.emit('confirm-next', { category: selectedCategory });
+        }
+
+        // Socket events
+        socket.on('room-created', (data) => {
+            roomId = data.roomId;
+            document.getElementById('display-room-code').textContent = data.roomId;
+            updatePlayersList(data.players);
+            if (!isSameDevice) {
+                showScreen('screen-waiting');
+            }
+        });
+
+        socket.on('player-joined', (data) => {
+            updatePlayersList(data.players);
+            if (data.players.length >= 2) {
+                document.getElementById('waiting-text').textContent = 'Both players ready!';
+                document.getElementById('start-btn').style.display = 'block';
+                
+                if (isSameDevice) {
+                    // Auto-start for same device
+                    showScreen('screen-waiting');
+                    setTimeout(() => startGame(), 500);
+                }
+            }
+        });
+
+        socket.on('player-left', (data) => {
+            updatePlayersList(data.players);
+            document.getElementById('waiting-text').textContent = 'Waiting for second player...';
+            document.getElementById('start-btn').style.display = 'none';
+        });
+
+        socket.on('new-question', (data) => {
+            showScreen('screen-game');
+            hasConfirmed = false;
+            
+            const card = document.getElementById('question-card');
+            card.style.animation = 'none';
+            setTimeout(() => { card.style.animation = 'slideIn 0.5s ease'; }, 10);
+            
+            document.getElementById('q-target').textContent = `🎯 ${data.targetPlayer}'s turn`;
+            
+            const isTruth = data.question.startsWith('TRUTH:');
+            const isDare = data.question.startsWith('DARE:');
+            const typeEl = document.getElementById('q-type');
+            
+            if (isTruth) {
+                typeEl.textContent = '🤫 TRUTH';
+                typeEl.className = 'type type-truth';
+            } else if (isDare) {
+                typeEl.textContent = '😈 DARE';
+                typeEl.className = 'type type-dare';
+            } else {
+                typeEl.textContent = '🎲 CHALLENGE';
+                typeEl.className = 'type type-truth';
+            }
+            
+            let questionText = data.question.replace(/^(TRUTH:|DARE:)\s*/, '');
+            document.getElementById('q-text').textContent = questionText;
+            
+            // Reset confirm button
+            const btn = document.getElementById('next-btn');
+            btn.classList.remove('confirmed');
+            btn.textContent = 'Next Question ➡️';
+            
+            // Reset dots
+            document.getElementById('dot1').classList.remove('active');
+            document.getElementById('dot2').classList.remove('active');
+            document.getElementById('confirm-text').textContent = 
+                isSameDevice ? 'Tap to continue' : 'Both must tap to continue';
+        });
+
+        socket.on('confirmation-update', (data) => {
+            if (data.confirmations >= 1) document.getElementById('dot1').classList.add('active');
+            if (data.confirmations >= 2) document.getElementById('dot2').classList.add('active');
+            
+            if (data.confirmations >= data.needed) {
+                document.getElementById('confirm-text').textContent = 'Generating next question...';
+            }
+        });
+
+        socket.on('error', (data) => {
+            document.getElementById('error-msg').textContent = data.message;
+            setTimeout(() => { document.getElementById('error-msg').textContent = ''; }, 3000);
+        });
+
+        function updatePlayersList(players) {
+            const list = document.getElementById('players-list');
+            list.innerHTML = players.map(p => `<span class="player-tag">👤 ${p.name}</span>`).join('');
+        }
+
+        // Enter key support
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const btn = input.parentElement.querySelector('.btn-primary');
+                    if (btn) btn.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
