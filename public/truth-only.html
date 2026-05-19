@@ -25,6 +25,7 @@
     <div class="screen" id="s-same">
         <div class="logo">📱</div>
         <h1>Enter names</h1>
+        <p class="subtitle">Both players on this phone</p>
         <input type="text" id="p1" placeholder="Player 1 name…" maxlength="20">
         <input type="text" id="p2" placeholder="Player 2 name…" maxlength="20">
         <button class="btn btn-primary" onclick="startSame()">Let's go 🤫</button>
@@ -34,11 +35,17 @@
     <div class="screen" id="s-diff">
         <div class="logo">📱📱</div>
         <h1>Two Phones</h1>
+        <p class="subtitle">Pick a code you both know</p>
         <input type="text" id="my-name" placeholder="Your name…" maxlength="20">
+        <input type="text" id="custom-code" placeholder="Choose a room code… (e.g. ALICE)" maxlength="6"
+               style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:1.3rem;font-weight:800;"
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')">
+        <p style="color:rgba(255,255,255,0.3);font-size:0.72rem;margin:-6px 0 10px;text-align:center;">No 0, O, 1, I — use letters & numbers 2-9</p>
         <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
-        <div class="divider"><span>or join</span></div>
-        <input type="text" id="code-input" placeholder="Room code…" maxlength="6"
-               style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.5rem;font-weight:800;">
+        <div class="divider"><span>or join existing</span></div>
+        <input type="text" id="code-input" placeholder="Enter room code…" maxlength="6"
+               style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.5rem;font-weight:800;"
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z2-9]/g,'')">
         <button class="btn btn-secondary" onclick="joinRoom()">Join</button>
         <div class="error-msg" id="err"></div>
         <a href="/" class="back-link">← Back</a>
@@ -48,7 +55,7 @@
         <div class="logo">⏳</div>
         <h1>Waiting…</h1>
         <div class="room-code">
-            <div class="label">Share this code</div>
+            <div class="label">Room code — share this</div>
             <div class="code" id="room-code">------</div>
             <button class="copy-btn" id="copy-btn" onclick="copyCode()">📋 Copy</button>
         </div>
@@ -61,9 +68,10 @@
         <div class="question-card" id="q-card">
             <div class="target" id="q-label">QUESTION FOR</div>
             <div class="player-name" id="q-player"></div>
-            <span class="type-badge type-truth">🤫 TRUTH</span>
+            <span class="type-badge type-truth" id="q-badge">🤫 TRUTH</span>
             <div class="text" id="q-text">Generating…</div>
         </div>
+        <div id="other-ready-badge" class="waiting-badge" style="display:none">✅ Other player ready — your turn to tap</div>
         <div class="confirmation-bar">
             <div class="confirmation-dot" id="dot1"></div>
             <div class="confirmation-dot" id="dot2"></div>
@@ -75,24 +83,137 @@
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket=io(), lang=new URLSearchParams(location.search).get('lang')||localStorage.getItem('dare-lang')||'en';
-let roomId,myName,confirmed=false,sameDevice=false;
-const $=id=>document.getElementById(id);
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
-function pick(m){document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));$(`mode-${m}`).classList.add('selected');setTimeout(()=>show(m==='same'?'s-same':'s-diff'),200);}
-function startSame(){const p1=$('p1').value.trim(),p2=$('p2').value.trim();if(!p1||!p2)return;sameDevice=true;myName=p1;socket.emit('create-room',{name:p1,sameDevice:true,gameType:'truth-only',lang});socket.once('room-created',d=>{roomId=d.roomId;socket.emit('same-device-mode',{name2:p2});});}
-function createRoom(){const n=$('my-name').value.trim();if(!n)return;myName=n;socket.emit('create-room',{name:n,gameType:'truth-only',lang});}
-function joinRoom(){const n=$('my-name').value.trim(),c=$('code-input').value.trim().toUpperCase();if(!n||!c)return;myName=n;socket.emit('join-room',{roomId:c,name:n});}
-function copyCode(){navigator.clipboard.writeText($('room-code').textContent);$('copy-btn').textContent='✅ Copied!';setTimeout(()=>$('copy-btn').textContent='📋 Copy',2000);}
-function startGame(){socket.emit('start-game',{});$('start-btn').innerHTML='<span class="loading"></span>';}
-function tapNext(){if(confirmed&&!sameDevice)return;confirmed=true;$('next-btn').classList.add('confirmed');$('next-btn').textContent='✅';socket.emit('confirm-next',{});}
-socket.on('room-created',d=>{roomId=d.roomId;$('room-code').textContent=d.roomId;renderP(d.players);if(!sameDevice)show('s-wait');});
-socket.on('player-joined',d=>{renderP(d.players);if(d.players.length>=2){$('wait-text').textContent='Both here! 🎉';$('start-btn').style.display='block';if(sameDevice){show('s-wait');setTimeout(startGame,400);}}});
-socket.on('player-left',d=>{renderP(d.players);$('start-btn').style.display='none';});
-socket.on('new-question',d=>{show('s-game');confirmed=false;const c=$('q-card');c.style.animation='none';requestAnimationFrame(()=>{c.style.animation='cardIn 0.5s cubic-bezier(.22,1,.36,1) both';});$('q-player').textContent=d.targetPlayer;$('q-text').textContent=d.question.replace(/^(TRUTH:|VÉRITÉ:)\s*/i,'');$('next-btn').classList.remove('confirmed');$('next-btn').textContent='Next ➡️';$('dot1').classList.remove('active');$('dot2').classList.remove('active');$('conf-label').textContent=sameDevice?'Tap Next':'Both tap Next';});
-socket.on('confirmation-update',d=>{if(d.confirmations>=1)$('dot1').classList.add('active');if(d.confirmations>=2)$('dot2').classList.add('active');});
-socket.on('error',d=>{$('err').textContent=d.message;setTimeout(()=>$('err').textContent='',3000);});
-function renderP(p){$('players').innerHTML=p.map(x=>`<span class="player-tag">👤 ${x.name}</span>`).join('');}
+const socket = io();
+const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('dare-lang') || 'en';
+let roomId, myName, confirmed = false, sameDevice = false;
+const $ = id => document.getElementById(id);
+function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+
+function pick(m) {
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));
+    $(`mode-${m}`).classList.add('selected');
+    setTimeout(()=>show(m==='same'?'s-same':'s-diff'), 200);
+}
+
+function startSame() {
+    const p1=$('p1').value.trim(), p2=$('p2').value.trim();
+    if(!p1||!p2) return;
+    sameDevice=true; myName=p1;
+    socket.emit('create-room',{name:p1,sameDevice:true,gameType:'truth-only',lang});
+    socket.once('room-created',d=>{roomId=d.roomId; socket.emit('same-device-mode',{name2:p2});});
+}
+
+function createRoom() {
+    const n=$('my-name').value.trim();
+    const code=($('custom-code').value.trim()||'').toUpperCase();
+    if(!n) return;
+    myName=n;
+    socket.emit('create-room',{name:n,gameType:'truth-only',lang, customCode: code||undefined});
+}
+
+function joinRoom() {
+    const n=$('my-name').value.trim(), c=$('code-input').value.trim().toUpperCase();
+    if(!n||!c) return;
+    myName=n;
+    socket.emit('join-room',{roomId:c,name:n});
+}
+
+function copyCode() {
+    navigator.clipboard.writeText($('room-code').textContent);
+    $('copy-btn').textContent='✅ Copied!';
+    setTimeout(()=>$('copy-btn').textContent='📋 Copy', 2000);
+}
+
+function startGame() {
+    socket.emit('start-game',{});
+    $('start-btn').innerHTML='<span class="loading"></span> Generating…';
+}
+
+function tapNext() {
+    if(confirmed && !sameDevice) return;
+    confirmed=true;
+    $('next-btn').className='btn btn-confirm confirmed-me';
+    $('next-btn').textContent=sameDevice?'✅ Next loading…':'✅ Waiting for them…';
+    $('other-ready-badge').style.display='none';
+    socket.emit('confirm-next',{});
+}
+
+function resetGame(data) {
+    show('s-game'); confirmed=false;
+    $('next-btn').className='btn btn-confirm';
+    $('next-btn').textContent='Next ➡️';
+    $('dot1').classList.remove('active');
+    $('dot2').classList.remove('active');
+    $('other-ready-badge').style.display='none';
+    $('conf-label').textContent=sameDevice?'Tap Next':'Both tap Next';
+
+    const card=$('q-card'); card.style.animation='none';
+    requestAnimationFrame(()=>{ card.style.animation='cardIn 0.5s cubic-bezier(.22,1,.36,1) both'; });
+
+    if(data.isHotTake) {
+        card.className='question-card hot-take-card';
+        $('q-label').textContent='🔥 HOT TOPIC';
+        $('q-player').textContent=data.targetPlayer;
+        $('q-badge').textContent='💬 DISCUSS';
+        $('q-badge').className='type-badge type-hot';
+        $('q-text').textContent=data.question;
+    } else {
+        card.className='question-card';
+        $('q-label').textContent='QUESTION FOR';
+        $('q-player').textContent=data.targetPlayer;
+        const q=data.question;
+        const isTruth=/^(TRUTH:|VÉRITÉ:)/i.test(q);
+        const isDare=/^(DARE:|ACTION:)/i.test(q);
+        const badge=$('q-badge');
+        if(isTruth){ badge.textContent='🤫 TRUTH'; badge.className='type-badge type-truth'; }
+        else if(isDare){ badge.textContent='😈 DARE'; badge.className='type-badge type-dare'; }
+        else { badge.textContent='🎲'; badge.className='type-badge type-truth'; }
+        $('q-text').textContent=q.replace(/^(TRUTH:|DARE:|VÉRITÉ:|ACTION:)\s*/i,'');
+    }
+}
+
+socket.on('room-created', d=>{
+    roomId=d.roomId;
+    $('room-code').textContent=d.roomId;
+    renderPlayers(d.players);
+    if(!sameDevice) show('s-wait');
+});
+
+socket.on('player-joined', d=>{
+    renderPlayers(d.players);
+    if(d.players.length>=2){
+        $('wait-text').textContent='Both here! 🎉';
+        $('start-btn').style.display='block';
+        if(sameDevice){ show('s-wait'); setTimeout(startGame,400); }
+    }
+});
+
+socket.on('player-left', d=>{
+    renderPlayers(d.players);
+    $('wait-text').textContent='Waiting for second player…';
+    $('start-btn').style.display='none';
+});
+
+socket.on('new-question', resetGame);
+
+socket.on('confirmation-update', d=>{
+    if(d.confirmations>=1) $('dot1').classList.add('active');
+    if(d.confirmations>=2) $('dot2').classList.add('active');
+    // If other player confirmed but not me yet — show badge
+    if(!confirmed && d.confirmedSocketId && d.confirmedSocketId !== socket.id && !sameDevice) {
+        $('other-ready-badge').style.display='inline-flex';
+    }
+    if(d.confirmations>=d.needed) $('conf-label').textContent='Loading next…';
+});
+
+socket.on('error', d=>{ $('err').textContent=d.message; setTimeout(()=>$('err').textContent='',4000); });
+
+function renderPlayers(p){ $('players').innerHTML=p.map(x=>`<span class="player-tag">👤 ${x.name}</span>`).join(''); }
+
+['p1','p2','my-name','custom-code','code-input'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const btn=el.closest('.screen').querySelector('.btn-primary'); if(btn)btn.click(); } });
+});
 </script>
 </body>
 </html>
