@@ -72,18 +72,10 @@
                 <div class="target" id="q-target">Loading...</div>
                 <div class="type" id="q-type">...</div>
                 <div class="text" id="q-text">Generating question...</div>
-                <div class="ai-badge">⚡ powered by AI</div>
+
             </div>
 
-            <div class="category-chips" id="category-chips">
-                <div class="chip selected" onclick="selectCategory(this, 'random')">🎲 Random</div>
-                <div class="chip" onclick="selectCategory(this, 'sexual experiences')">🔥 Spicy</div>
-                <div class="chip" onclick="selectCategory(this, 'family secrets')">👨‍👩‍👧 Family</div>
-                <div class="chip" onclick="selectCategory(this, 'Christian faith & morality')">✝️ Faith</div>
-                <div class="chip" onclick="selectCategory(this, 'ex relationships')">💔 Exes</div>
-                <div class="chip" onclick="selectCategory(this, 'deep fears')">😱 Deep</div>
-                <div class="chip" onclick="selectCategory(this, 'controversial opinions')">🤔 Hot Takes</div>
-            </div>
+
 
             <div class="confirmation-bar" id="confirm-bar">
                 <div class="confirmation-dot" id="dot1"></div>
@@ -103,7 +95,7 @@
         let currentMode = null;
         let roomId = null;
         let myName = '';
-        let selectedCategory = null;
+        let selectedCategory = null; // always random/mixed
         let hasConfirmed = false;
         let isSameDevice = false;
 
@@ -121,11 +113,6 @@
             }, 300);
         }
 
-        function selectCategory(el, cat) {
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
-            selectedCategory = cat === 'random' ? null : cat;
-        }
 
         function startSameDevice() {
             const p1 = document.getElementById('player1-name').value.trim();
@@ -168,14 +155,11 @@
         }
 
         function confirmNext() {
-            if (hasConfirmed) return;
+            if (hasConfirmed && !isSameDevice) return;
             hasConfirmed = true;
             document.getElementById('next-btn').classList.add('confirmed');
-            document.getElementById('next-btn').textContent = '✅ Waiting for other player...';
-            if (isSameDevice) {
-                document.getElementById('next-btn').textContent = '✅ Loading next...';
-            }
-            socket.emit('confirm-next', { category: selectedCategory });
+            document.getElementById('next-btn').textContent = isSameDevice ? '✅ Loading next...' : '✅ Waiting for other player...';
+            socket.emit('confirm-next', { category: null });
         }
 
         // Socket events

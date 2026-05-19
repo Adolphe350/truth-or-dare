@@ -194,7 +194,7 @@ io.on('connection', (socket) => {
   socket.on('confirm-next', async (data) => {
     const room = rooms.get(socket.roomId);
     if (!room) return;
-    room.confirmations.add(socket.id);
+    room.confirmations.add(room.sameDevice ? `${socket.id}-${Date.now()}` : socket.id);
     const needed = room.sameDevice ? 1 : 2;
     io.to(socket.roomId).emit('confirmation-update', { confirmations: room.confirmations.size, needed });
 

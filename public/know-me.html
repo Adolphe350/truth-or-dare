@@ -78,7 +78,7 @@
                 <div class="target" id="q-about">About...</div>
                 <div class="type type-know">🧠 GUESS</div>
                 <div class="text" id="q-text">Loading question...</div>
-                <div class="ai-badge">⚡ powered by AI</div>
+
             </div>
 
             <div class="answer-section">
@@ -198,10 +198,10 @@
         }
 
         function confirmNext() {
-            if (hasConfirmed) return;
+            if (hasConfirmed && !isSameDevice) return;
             hasConfirmed = true;
             document.getElementById('next-btn').classList.add('confirmed');
-            document.getElementById('next-btn').textContent = '✅ Waiting...';
+            document.getElementById('next-btn').textContent = isSameDevice ? '✅ Loading next...' : '✅ Waiting...';
             socket.emit('confirm-next', {});
         }
 
