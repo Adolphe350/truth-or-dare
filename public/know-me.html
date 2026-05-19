@@ -87,12 +87,19 @@ const GAME_TYPE = 'know-me';
 const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('dare-lang') || 'en';
 let roomId, myName, confirmed = false, sameDevice = false;
 const $ = id => document.getElementById(id);
-function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = $(id);
+    // Force iOS layout flush before adding class
+    el.style.display = 'flex';
+    void el.offsetHeight; // trigger reflow
+    el.classList.add('active');
+}
 
 function pick(m) {
     document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));
-    $(`mode-${m}`).classList.add('selected');
-    setTimeout(()=>show(m==='same'?'s-same':'s-diff'), 200);
+    $('mode-'+m).classList.add('selected');
+    show(m==='same'?'s-same':'s-diff');
 }
 
 function startSame() {
