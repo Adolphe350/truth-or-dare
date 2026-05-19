@@ -1,5 +1,5 @@
 /* ===== RESET ===== */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 /* ===== BASE ===== */
 body {
@@ -9,6 +9,7 @@ body {
     color: #fff;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
 }
 
 /* ===== ANIMATED BG ===== */
@@ -91,6 +92,11 @@ h1 {
     color: white; text-align: center;
     cursor: pointer; transition: all 0.25s cubic-bezier(.22,1,.36,1);
     backdrop-filter: blur(12px);
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
 }
 .mode-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
 .mode-btn.selected {
@@ -131,6 +137,9 @@ input::placeholder { color: rgba(255,255,255,0.25); }
     font-family: inherit; cursor: pointer;
     transition: all 0.25s cubic-bezier(.22,1,.36,1);
     margin-bottom: 12px; position: relative; overflow: hidden;
+    -webkit-appearance: none; appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 .btn::after {
     content:''; position:absolute; inset:0;
