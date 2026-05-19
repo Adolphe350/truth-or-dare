@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dare Only 😈</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="screen active" id="screen-welcome">
+            <div class="logo">😈</div>
+            <h1>Dare Only</h1>
+            <p class="subtitle">Challenges only • No questions</p>
+            <div class="mode-select">
+                <div class="mode-btn" id="mode-same" onclick="selectMode('same')"><div class="icon">📱</div><div class="label">Same Phone</div></div>
+                <div class="mode-btn" id="mode-diff" onclick="selectMode('different')"><div class="icon">📱📱</div><div class="label">Two Phones</div></div>
+            </div>
+        </div>
+        <div class="screen" id="screen-same-setup">
+            <div class="logo">📱</div>
+            <input type="text" id="player1-name" placeholder="Player 1..." maxlength="20">
+            <input type="text" id="player2-name" placeholder="Player 2..." maxlength="20">
+            <button class="btn btn-primary" onclick="startSameDevice()">Go! 😈</button>
+            <a href="/" class="back-link">←</a>
+        </div>
+        <div class="screen" id="screen-diff-setup">
+            <div class="logo">📱📱</div>
+            <input type="text" id="my-name" placeholder="Your name..." maxlength="20">
+            <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+            <div class="divider"><span>or</span></div>
+            <input type="text" id="room-input" placeholder="Code..." maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-size:1.4rem;">
+            <button class="btn btn-secondary" onclick="joinRoom()">Join</button>
+            <div class="error-msg" id="error-msg"></div>
+            <a href="/" class="back-link">←</a>
+        </div>
+        <div class="screen" id="screen-waiting">
+            <div class="logo">⏳</div>
+            <div class="room-code"><div class="label">CODE</div><div class="code" id="display-room-code">------</div><button class="copy-btn" onclick="copyCode()">📋</button></div>
+            <div class="players-list" id="players-list"></div>
+            <p class="waiting-text" id="waiting-text">Waiting...</p>
+            <button class="btn btn-primary" id="start-btn" style="display:none;" onclick="startGame()">Start! 😈</button>
+        </div>
+        <div class="screen" id="screen-game">
+            <div class="question-card" id="question-card">
+                <div class="target" id="q-target">...</div>
+                <div class="type type-dare" id="q-type">😈</div>
+                <div class="text" id="q-text">...</div>
+            </div>
+            <div class="confirmation-bar"><div class="confirmation-dot" id="dot1"></div><div class="confirmation-dot" id="dot2"></div><span id="confirm-text">Both tap Next</span></div>
+            <button class="btn btn-confirm" id="next-btn" onclick="confirmNext()">Next ➡️</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket=io(), params=new URLSearchParams(window.location.search), lang=params.get('lang')||localStorage.getItem('dare-lang')||'en';
+        let roomId=null,myName='',hasConfirmed=false,isSameDevice=false;
+        function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+        function selectMode(m){document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));document.getElementById(`mode-${m==='same'?'same':'diff'}`).classList.add('selected');setTimeout(()=>showScreen(m==='same'?'screen-same-setup':'screen-diff-setup'),200);}
+        function startSameDevice(){const p1=document.getElementById('player1-name').value.trim(),p2=document.getElementById('player2-name').value.trim();if(!p1||!p2)return;isSameDevice=true;myName=p1;socket.emit('create-room',{name:p1,sameDevice:true,gameType:'dare-only',lang});socket.once('room-created',d=>{roomId=d.roomId;socket.emit('same-device-mode',{name2:p2});});}
+        function createRoom(){const n=document.getElementById('my-name').value.trim();if(!n)return;myName=n;socket.emit('create-room',{name:n,gameType:'dare-only',lang});}
+        function joinRoom(){const n=document.getElementById('my-name').value.trim(),c=document.getElementById('room-input').value.trim().toUpperCase();if(!n||!c)return;myName=n;socket.emit('join-room',{roomId:c,name:n});}
+        function copyCode(){navigator.clipboard.writeText(document.getElementById('display-room-code').textContent);}
+        function startGame(){socket.emit('start-game',{});document.getElementById('start-btn').innerHTML='<span class="loading"></span>';}
+        function confirmNext(){if(hasConfirmed&&!isSameDevice)return;hasConfirmed=true;document.getElementById('next-btn').classList.add('confirmed');document.getElementById('next-btn').textContent='✅';socket.emit('confirm-next',{});}
+        socket.on('room-created',d=>{roomId=d.roomId;document.getElementById('display-room-code').textContent=d.roomId;updatePlayers(d.players);if(!isSameDevice)showScreen('screen-waiting');});
+        socket.on('player-joined',d=>{updatePlayers(d.players);if(d.players.length>=2){document.getElementById('waiting-text').textContent='Ready!';document.getElementById('start-btn').style.display='block';if(isSameDevice){showScreen('screen-waiting');setTimeout(()=>startGame(),400);}}});
+        socket.on('player-left',d=>{updatePlayers(d.players);document.getElementById('start-btn').style.display='none';});
+        socket.on('new-question',d=>{showScreen('screen-game');hasConfirmed=false;const card=document.getElementById('question-card');card.style.animation='none';setTimeout(()=>{card.style.animation='slideIn 0.5s ease';},10);document.getElementById('q-target').textContent=`🎯 ${d.targetPlayer}`;document.getElementById('q-text').textContent=d.question.replace(/^(DARE:|ACTION:)\s*/i,'');document.getElementById('next-btn').classList.remove('confirmed');document.getElementById('next-btn').textContent='Next ➡️';document.getElementById('dot1').classList.remove('active');document.getElementById('dot2').classList.remove('active');document.getElementById('confirm-text').textContent=isSameDevice?'Tap Next':'Both tap Next';});
+        socket.on('confirmation-update',d=>{if(d.confirmations>=1)document.getElementById('dot1').classList.add('active');if(d.confirmations>=2)document.getElementById('dot2').classList.add('active');});
+        socket.on('error',d=>{document.getElementById('error-msg').textContent=d.message;setTimeout(()=>{document.getElementById('error-msg').textContent='';},3000);});
+        function updatePlayers(p){document.getElementById('players-list').innerHTML=p.map(x=>`<span class="player-tag">👤 ${x.name}</span>`).join('');}
+    </script>
+</body>
+</html>

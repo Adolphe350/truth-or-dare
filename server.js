@@ -13,6 +13,8 @@ const io = new Server(server, { cors: { origin: '*' } });
 app.use(express.json());
 app.get('/truth-or-dare', (req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-or-dare.html')));
 app.get('/know-me', (req, res) => res.sendFile(path.join(__dirname, 'public', 'know-me.html')));
+app.get('/truth-only', (req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-only.html')));
+app.get('/dare-only', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dare-only.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = new Map();
@@ -21,20 +23,18 @@ const rooms = new Map();
 
 const langInstructions = {
   en: 'Write in simple English. Use easy words that anyone can understand. Short sentences.',
-  fr: 'Écris en français simple. Utilise des mots faciles que tout le monde comprend. Phrases courtes.',
-  rw: 'Andika mu Kinyarwanda kisanzwe. Koresha amagambo yoroshye umuntu wese ashobora kumva. Interuro ngufi.'
+  fr: 'Écris en français simple. Utilise des mots faciles que tout le monde comprend. Phrases courtes.'
 };
 
 const truthDarePrefix = {
   en: { truth: 'TRUTH:', dare: 'DARE:' },
-  fr: { truth: 'VÉRITÉ:', dare: 'ACTION:' },
-  rw: { truth: 'UKURI:', dare: 'IGIHANO:' }
+  fr: { truth: 'VÉRITÉ:', dare: 'ACTION:' }
 };
 
-async function generateTruthOrDare(playerName, previousQuestions = [], lang = 'en') {
+async function generateTruthOrDare(playerName, previousQuestions = [], lang = 'en', mode = 'mixed') {
   const categories = ['family', 'sex', 'faith/church', 'ex relationships', 'embarrassing moments', 'fears', 'fantasies', 'opinions', 'childhood', 'dreams', 'guilty pleasures', 'loyalty', 'money', 'love & heartbreak'];
   const category = categories[Math.floor(Math.random() * categories.length)];
-  const isTruth = Math.random() > 0.3;
+  const isTruth = mode === 'truth-only' ? true : mode === 'dare-only' ? false : Math.random() > 0.3;
   const prefix = truthDarePrefix[lang] || truthDarePrefix.en;
   const langNote = langInstructions[lang] || langInstructions.en;
 
@@ -199,7 +199,7 @@ async function sendNextQuestion(room) {
   if (room.gameType === 'know-me') {
     question = await generateKnowMeQuestion(target.name, other.name, room.previousQuestions, room.lang);
   } else {
-    question = await generateTruthOrDare(target.name, room.previousQuestions, room.lang);
+    question = await generateTruthOrDare(target.name, room.previousQuestions, room.lang, room.gameType);
   }
   room.previousQuestions.push(question);
   io.to(room.id).emit('new-question', {

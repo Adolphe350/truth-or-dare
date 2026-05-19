@@ -7,135 +7,71 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            color: white;
-            overflow-x: hidden;
-        }
-        .landing {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px 20px;
-            text-align: center;
-        }
-        .hero-emoji { font-size: 4rem; margin-bottom: 15px; animation: bounce 2s infinite; }
+        body { font-family: 'Poppins', sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; overflow-x: hidden; }
+        .landing { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; text-align: center; }
+        .hero-emoji { font-size: 3.5rem; margin-bottom: 10px; animation: bounce 2s infinite; }
         @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        h1 {
-            font-size: 2.8rem; font-weight: 900;
-            background: linear-gradient(to right, #ff6b6b, #feca57, #ff6b6b);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-        }
-        .tagline { color: #a8a8d8; font-size: 1rem; margin-bottom: 30px; }
-        
-        .lang-select {
-            display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;
-        }
-        .lang-btn {
-            padding: 10px 20px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.03); color: #a8a8d8; font-family: 'Poppins', sans-serif;
-            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s;
-        }
+        h1 { font-size: 2.5rem; font-weight: 900; background: linear-gradient(to right, #ff6b6b, #feca57, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        .tagline { color: #a8a8d8; font-size: 0.9rem; margin-bottom: 25px; }
+        .lang-select { display: flex; gap: 10px; margin-bottom: 25px; }
+        .lang-btn { padding: 10px 20px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); color: #a8a8d8; font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .lang-btn:hover, .lang-btn.selected { border-color: #feca57; color: #feca57; background: rgba(254,202,87,0.1); }
-
-        .games-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 700px; width: 100%; }
-        .game-card {
-            flex: 1 1 280px; max-width: 320px;
-            background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 24px; padding: 30px 24px; cursor: pointer; transition: all 0.3s; text-align: center;
-        }
-        .game-card:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.05); transform: translateY(-5px); box-shadow: 0 20px 60px rgba(255,107,107,0.15); }
-        .game-card .icon { font-size: 3rem; margin-bottom: 15px; }
-        .game-card h2 { font-size: 1.3rem; margin-bottom: 8px; }
-        .game-card p { color: #a8a8d8; font-size: 0.85rem; line-height: 1.5; }
-        .game-card .badge { display: inline-block; margin-top: 12px; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: rgba(255,107,107,0.2); color: #ff6b6b; }
-        .footer { margin-top: 50px; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+        .games-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; max-width: 750px; width: 100%; }
+        .game-card { flex: 1 1 200px; max-width: 220px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px 16px; cursor: pointer; transition: all 0.3s; text-align: center; }
+        .game-card:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.05); transform: translateY(-4px); box-shadow: 0 15px 40px rgba(255,107,107,0.15); }
+        .game-card .icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .game-card h2 { font-size: 1rem; margin-bottom: 6px; }
+        .game-card p { color: #a8a8d8; font-size: 0.75rem; line-height: 1.4; }
     </style>
 </head>
 <body>
     <div class="landing">
         <div class="hero-emoji">🎲</div>
         <h1>Dare AI</h1>
-        <p class="tagline" id="tagline">Party games for two • No mercy</p>
+        <p class="tagline" id="tagline">Party games for two</p>
 
         <div class="lang-select">
             <button class="lang-btn selected" onclick="setLang('en')">🇬🇧 English</button>
             <button class="lang-btn" onclick="setLang('fr')">🇫🇷 Français</button>
-            <button class="lang-btn" onclick="setLang('rw')">🇷🇼 Ikinyarwanda</button>
         </div>
 
         <div class="games-grid">
             <div class="game-card" onclick="go('know-me')">
                 <div class="icon">💕</div>
-                <h2 id="card1-title">How Well Do You Know Me?</h2>
-                <p id="card1-desc">Test your bond! Guess each other's favorites, secrets & memories.</p>
-                <span class="badge">🔥</span>
+                <h2 id="c1">Know Me?</h2>
+                <p id="c1d">How well do you know each other?</p>
             </div>
-
             <div class="game-card" onclick="go('truth-or-dare')">
                 <div class="icon">🔥</div>
-                <h2 id="card2-title">Truth or Dare</h2>
-                <p id="card2-desc">Savage truths & wild dares. All topics mixed. Both tap to continue.</p>
-                <span class="badge">CLASSIC</span>
+                <h2 id="c2">Truth or Dare</h2>
+                <p id="c2d">Mixed truths & dares</p>
+            </div>
+            <div class="game-card" onclick="go('truth-only')">
+                <div class="icon">🤫</div>
+                <h2 id="c3">Truth Only</h2>
+                <p id="c3d">Deep questions only</p>
+            </div>
+            <div class="game-card" onclick="go('dare-only')">
+                <div class="icon">😈</div>
+                <h2 id="c4">Dare Only</h2>
+                <p id="c4d">Challenges only</p>
             </div>
         </div>
-
-        <div class="footer"><p>Fresh questions every time</p></div>
     </div>
 
     <script>
         const texts = {
-            en: {
-                tagline: "Party games for two • No mercy",
-                card1Title: "How Well Do You Know Me?",
-                card1Desc: "Test your bond! Guess each other's favorites, secrets & memories.",
-                card2Title: "Truth or Dare",
-                card2Desc: "Savage truths & wild dares. All topics mixed. Both tap to continue."
-            },
-            fr: {
-                tagline: "Jeux pour deux • Sans pitié",
-                card1Title: "Tu Me Connais Bien ?",
-                card1Desc: "Teste ton lien ! Devine les secrets, préférences et souvenirs de l'autre.",
-                card2Title: "Action ou Vérité",
-                card2Desc: "Vérités brutales & défis fous. Tous les sujets mélangés."
-            },
-            rw: {
-                tagline: "Imikino y'abantu babiri • Nta mbabazi",
-                card1Title: "Uzi Ibyanye?",
-                card1Desc: "Reba neza umenya mugenzi wawe! Tekerereza ibihe akunda, ibanga rye n'ibyibutso bye.",
-                card2Title: "Ukuri cyangwa Igihano",
-                card2Desc: "Ukuri gukaze & ibihano bikomeye. Ibibazo byose bivanze."
-            }
+            en: { tagline: "Party games for two", c1: "Know Me?", c1d: "How well do you know each other?", c2: "Truth or Dare", c2d: "Mixed truths & dares", c3: "Truth Only", c3d: "Deep questions only", c4: "Dare Only", c4d: "Challenges only" },
+            fr: { tagline: "Jeux pour deux", c1: "Tu Me Connais?", c1d: "Tu connais bien l'autre?", c2: "Action ou Vérité", c2d: "Vérités & défis mélangés", c3: "Vérité Seule", c3d: "Questions profondes", c4: "Action Seule", c4d: "Défis seulement" }
         };
+        let lang = localStorage.getItem('dare-lang') || 'en';
+        if (lang === 'rw') lang = 'en'; // remove rw
+        localStorage.setItem('dare-lang', lang);
+        updateUI();
 
-        let currentLang = localStorage.getItem('dare-lang') || 'en';
-        updateLang();
-
-        function setLang(lang) {
-            currentLang = lang;
-            localStorage.setItem('dare-lang', lang);
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
-            event.target.classList.add('selected');
-            updateLang();
-        }
-
-        function updateLang() {
-            const t = texts[currentLang];
-            document.getElementById('tagline').textContent = t.tagline;
-            document.getElementById('card1-title').textContent = t.card1Title;
-            document.getElementById('card1-desc').textContent = t.card1Desc;
-            document.getElementById('card2-title').textContent = t.card2Title;
-            document.getElementById('card2-desc').textContent = t.card2Desc;
-        }
-
-        function go(page) {
-            window.location.href = `/${page}?lang=${currentLang}`;
-        }
+        function setLang(l) { lang = l; localStorage.setItem('dare-lang', l); document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('selected')); event.target.classList.add('selected'); updateUI(); }
+        function updateUI() { const t = texts[lang] || texts.en; document.getElementById('tagline').textContent=t.tagline; document.getElementById('c1').textContent=t.c1; document.getElementById('c1d').textContent=t.c1d; document.getElementById('c2').textContent=t.c2; document.getElementById('c2d').textContent=t.c2d; document.getElementById('c3').textContent=t.c3; document.getElementById('c3d').textContent=t.c3d; document.getElementById('c4').textContent=t.c4; document.getElementById('c4d').textContent=t.c4d; }
+        function go(page) { window.location.href = `/${page}?lang=${lang}`; }
     </script>
 </body>
 </html>
