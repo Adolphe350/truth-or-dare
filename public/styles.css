@@ -367,3 +367,122 @@ input::placeholder { color: rgba(255,255,255,0.25); }
 
 /* ===== ERROR ===== */
 .error-msg { color: #f87171; font-size: 0.82rem; margin: 6px 0; text-align: center; min-height: 20px; }
+
+/* ===== ENHANCED GAME PAGE STYLES ===== */
+
+/* Top nav bar */
+.game-header {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 0 0 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 8px;
+}
+.game-header-back {
+    color: rgba(255,255,255,0.4); font-size: 0.82rem; font-weight: 600;
+    text-decoration: none; padding: 8px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s;
+    display: flex; align-items: center; gap: 5px;
+}
+.game-header-back:hover { color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.2); }
+.game-header-brand { font-size: 0.9rem; font-weight: 800; color: rgba(255,255,255,0.5); }
+.game-header-spacer { width: 80px; }
+
+/* Round counter */
+.round-counter {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
+    color: rgba(255,255,255,0.4); text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+/* Enhanced question card */
+.question-card {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 28px;
+    padding: 36px 28px;
+    margin: 16px 0;
+    text-align: center;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardIn 0.45s cubic-bezier(.22,1,.36,1) both;
+    transition: border-color 0.4s, box-shadow 0.4s;
+}
+@keyframes cardIn { from{opacity:0;transform:scale(0.92) translateY(22px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+/* Card exit animation */
+.question-card.card-exit {
+    animation: cardOut 0.3s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes cardOut { from{opacity:1;transform:scale(1) translateY(0)} to{opacity:0;transform:scale(0.95) translateY(-16px)} }
+
+/* Truth card — purple glow */
+.question-card.type-truth {
+    border-color: rgba(120,60,255,0.45);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 40px rgba(120,60,255,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardIn 0.45s cubic-bezier(.22,1,.36,1) both, glowTruth 3s ease-in-out infinite;
+}
+@keyframes glowTruth { 0%,100%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 30px rgba(120,60,255,0.12),inset 0 1px 0 rgba(255,255,255,0.08)} 50%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 50px rgba(120,60,255,0.25),inset 0 1px 0 rgba(255,255,255,0.08)} }
+
+/* Dare card — red glow */
+.question-card.type-dare {
+    border-color: rgba(255,50,80,0.45);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 40px rgba(255,50,80,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardIn 0.45s cubic-bezier(.22,1,.36,1) both, glowDare 3s ease-in-out infinite;
+}
+@keyframes glowDare { 0%,100%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 30px rgba(255,50,80,0.12),inset 0 1px 0 rgba(255,255,255,0.08)} 50%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 50px rgba(255,50,80,0.28),inset 0 1px 0 rgba(255,255,255,0.08)} }
+
+/* Know Me card — teal glow */
+.question-card.type-know {
+    border-color: rgba(0,200,200,0.4);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 40px rgba(0,200,200,0.12), inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardIn 0.45s cubic-bezier(.22,1,.36,1) both, glowKnow 3s ease-in-out infinite;
+}
+@keyframes glowKnow { 0%,100%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 30px rgba(0,200,200,0.1),inset 0 1px 0 rgba(255,255,255,0.08)} 50%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 50px rgba(0,200,200,0.22),inset 0 1px 0 rgba(255,255,255,0.08)} }
+
+/* Hot take card — orange glow */
+.question-card.hot-take-card {
+    border-color: rgba(255,140,0,0.4);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 40px rgba(255,140,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+    animation: cardIn 0.45s cubic-bezier(.22,1,.36,1) both, glowHot 3s ease-in-out infinite;
+}
+@keyframes glowHot { 0%,100%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 30px rgba(255,140,0,0.12),inset 0 1px 0 rgba(255,255,255,0.08)} 50%{box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 50px rgba(255,140,0,0.28),inset 0 1px 0 rgba(255,255,255,0.08)} }
+
+/* Enhanced question text */
+.question-card .text {
+    font-size: 1.35rem; font-weight: 700;
+    line-height: 1.6; color: rgba(255,255,255,0.95);
+    letter-spacing: -0.2px;
+}
+
+/* Enhanced Next button */
+.btn-next {
+    width: 100%; padding: 18px;
+    background: linear-gradient(135deg, rgba(160,60,255,0.9), rgba(255,60,100,0.9));
+    border: none; border-radius: 18px;
+    color: #fff; font-size: 1.05rem; font-weight: 800;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer; transition: all 0.2s cubic-bezier(.22,1,.36,1);
+    box-shadow: 0 8px 24px rgba(160,60,255,0.3);
+    letter-spacing: -0.3px;
+    position: relative; overflow: hidden;
+}
+.btn-next::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0; transition: opacity 0.2s;
+}
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(160,60,255,0.4); }
+.btn-next:hover::after { opacity: 1; }
+.btn-next:active { transform: scale(0.98) translateY(0); }
+.btn-next:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Waiting for partner badge */
+.waiting-label {
+    font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.4);
+    text-align: center; padding: 8px 0; letter-spacing: 0.2px;
+}

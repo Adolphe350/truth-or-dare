@@ -11,15 +11,23 @@
 <body>
 <div class="container">
 
+    <div class="game-header">
+        <a href="/" class="game-header-back">← Back</a>
+        <span class="game-header-brand">🎲 Dare AI</span>
+        <div class="game-header-spacer"></div>
+    </div>
+
     <div class="screen active" id="s-welcome">
         <div class="logo">🔥</div>
         <h1>Truth or Dare</h1>
-        <p class="subtitle">Mixed truths & dares</p>
+        <p class="subtitle">Mixed truths & dares — the classic</p>
         <div class="mode-select">
             <button class="mode-btn" id="mode-same" onclick="pick('same')"><span style="font-size:2rem;display:block;margin-bottom:8px">📱</span><span style="font-size:0.8rem;font-weight:600">Same Phone</span></button>
             <button class="mode-btn" id="mode-diff" onclick="pick('diff')"><span style="font-size:2rem;display:block;margin-bottom:8px">📱📱</span><span style="font-size:0.8rem;font-weight:600">Two Phones</span></button>
         </div>
-        <a href="/" class="back-link">← All games</a>
+        <div class="how-it-works" style="margin-top:16px">
+            <strong>How to play:</strong> Both players pick the same room code → answer truths or complete dares → tap Next together for the next question!
+        </div>
     </div>
 
     <div class="screen" id="s-same">
@@ -67,6 +75,7 @@
     </div>
 
     <div class="screen" id="s-game">
+        <div class="round-counter" id="round-counter">🎲 Round 1</div>
         <div class="question-card" id="q-card">
             <div class="target" id="q-label">QUESTION FOR</div>
             <div class="player-name" id="q-player"></div>
@@ -79,7 +88,7 @@
             <div class="confirmation-dot" id="dot2"></div>
             <span id="conf-label">Both tap Next</span>
         </div>
-        <button class="btn btn-confirm" id="next-btn" onclick="tapNext()">Next ➡️</button>
+        <button class="btn-next" id="next-btn" onclick="tapNext()">Next ➡️</button>
     </div>
 
 </div>
@@ -138,44 +147,49 @@ function startGame() {
 function tapNext() {
     if(confirmed && !sameDevice) return;
     confirmed=true;
-    $('next-btn').className='btn btn-confirm confirmed-me';
+    $('next-btn').disabled = true;
     $('next-btn').textContent=sameDevice?'✅ Next loading…':'✅ Waiting for them…';
     $('other-ready-badge').style.display='none';
     socket.emit('confirm-next',{});
 }
 
+let roundNum = 0;
+
 function resetGame(data) {
+    roundNum++;
     show('s-game'); confirmed=false;
-    $('next-btn').className='btn btn-confirm';
+    $('next-btn').disabled = false;
     $('next-btn').textContent='Next ➡️';
     $('dot1').classList.remove('active');
     $('dot2').classList.remove('active');
     $('other-ready-badge').style.display='none';
     $('conf-label').textContent=sameDevice?'Tap Next':'Both tap Next';
+    if($('round-counter')) $('round-counter').textContent=`🎲 Round ${roundNum}`;
 
-    const card=$('q-card'); card.style.animation='none';
-    requestAnimationFrame(()=>{ card.style.animation='cardIn 0.5s cubic-bezier(.22,1,.36,1) both'; });
-
-    if(data.isHotTake) {
-        card.className='question-card hot-take-card';
-        $('q-label').textContent='🔥 HOT TOPIC';
-        $('q-player').textContent=data.targetPlayer;
-        $('q-badge').textContent='💬 DISCUSS';
-        $('q-badge').className='type-badge type-hot';
-        $('q-text').textContent=data.question;
-    } else {
-        card.className='question-card';
-        $('q-label').textContent='QUESTION FOR';
-        $('q-player').textContent=data.targetPlayer;
-        const q=data.question;
-        const isTruth=/^(TRUTH:|VÉRITÉ:)/i.test(q);
-        const isDare=/^(DARE:|ACTION:)/i.test(q);
-        const badge=$('q-badge');
-        if(isTruth){ badge.textContent='🤫 TRUTH'; badge.className='type-badge type-truth'; }
-        else if(isDare){ badge.textContent='😈 DARE'; badge.className='type-badge type-dare'; }
-        else { badge.textContent='🎲'; badge.className='type-badge type-truth'; }
-        $('q-text').textContent=q.replace(/^(TRUTH:|DARE:|VÉRITÉ:|ACTION:)\s*/i,'');
-    }
+    const card=$('q-card');
+    card.style.animation='none';
+    requestAnimationFrame(()=>{
+        if(data.isHotTake) {
+            card.className='question-card hot-take-card';
+            $('q-label').textContent='🔥 HOT TOPIC';
+            $('q-player').textContent=data.targetPlayer;
+            $('q-badge').textContent='💬 DISCUSS';
+            $('q-badge').className='type-badge type-hot';
+            $('q-text').textContent=data.question;
+        } else {
+            const q=data.question;
+            const isTruth=/^(TRUTH:|VÉRITÉ:)/i.test(q);
+            const isDare=/^(DARE:|ACTION:)/i.test(q);
+            const badge=$('q-badge');
+            if(isTruth){ card.className='question-card type-truth'; badge.textContent='🤫 TRUTH'; badge.className='type-badge type-truth'; }
+            else if(isDare){ card.className='question-card type-dare'; badge.textContent='😈 DARE'; badge.className='type-badge type-dare'; }
+            else { card.className='question-card type-truth'; badge.textContent='🎲'; badge.className='type-badge type-truth'; }
+            $('q-label').textContent='QUESTION FOR';
+            $('q-player').textContent=data.targetPlayer;
+            $('q-text').textContent=q.replace(/^(TRUTH:|DARE:|VÉRITÉ:|ACTION:)\s*/i,'');
+        }
+        card.style.animation='cardIn 0.45s cubic-bezier(.22,1,.36,1) both';
+    });
 }
 
 socket.on('room-created', d=>{

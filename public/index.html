@@ -3,77 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dare AI</title>
+    <title>Dare AI — AI Party Games for Two</title>
+    <meta name="description" content="Play AI-powered Truth or Dare with a friend. Fresh questions every round, no two games ever the same. 100% private, no sign-up needed.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { touch-action: manipulation; font-family: 'Inter', sans-serif; min-height: 100vh; background: #0a0a0f; color: #fff; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(120,40,200,0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(255,60,100,0.2) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 60% 30%, rgba(0,200,255,0.1) 0%, transparent 50%); pointer-events: none; z-index: 0; animation: bgShift 12s ease-in-out infinite alternate; }
-        @keyframes bgShift { 0%{opacity:1} 100%{opacity:0.7;filter:hue-rotate(25deg)} }
-        .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; position: relative; z-index: 1; }
-        .brand-icon { font-size: 4rem; display: block; animation: float 3s ease-in-out infinite; filter: drop-shadow(0 0 30px rgba(255,100,150,0.6)); margin-bottom: 8px; }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        .brand-name { font-size: 3rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, rgba(200,150,255,0.9) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .brand-sub { color: rgba(255,255,255,0.35); font-size: 0.85rem; margin-top: 4px; letter-spacing: 0.5px; }
-        .lang-row { display: flex; gap: 8px; margin: 24px 0; }
-        .lang-pill { padding: 9px 22px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.45); font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.25s; }
+        :root {
+            --purple: #a03cff;
+            --pink: #ff3c64;
+            --teal: #00c8c8;
+            --orange: #ff8c00;
+            --bg: #0a0a0f;
+            --glass: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.09);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: var(--bg);
+            color: #fff;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Animated gradient bg */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(120,40,200,0.3) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(255,60,100,0.22) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 60% 30%, rgba(0,200,255,0.12) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+            animation: bgShift 14s ease-in-out infinite alternate;
+        }
+        @keyframes bgShift { 0%{opacity:1} 100%{opacity:0.7;filter:hue-rotate(20deg)} }
+
+        .page {
+            position: relative; z-index: 1;
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 48px 24px 64px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* ── HERO ── */
+        .hero { text-align: center; margin-bottom: 36px; }
+        .hero-icon {
+            font-size: 4.5rem;
+            display: block;
+            filter: drop-shadow(0 0 36px rgba(255,100,150,0.65));
+            animation: float 3.5s ease-in-out infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        .brand {
+            font-size: 3.4rem; font-weight: 900; letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #fff 0%, #c084fc 60%, #f472b6 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+        .tagline {
+            font-size: 1.05rem; font-weight: 600;
+            color: rgba(255,255,255,0.65);
+            margin-top: 10px; letter-spacing: -0.2px;
+        }
+        .sub {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.32);
+            margin-top: 6px; letter-spacing: 0.2px;
+        }
+
+        /* ── LANG ── */
+        .lang-row { display: flex; gap: 8px; margin-bottom: 32px; }
+        .lang-pill {
+            padding: 9px 22px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.4);
+            font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
         .lang-pill:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.8); }
-        .lang-pill.active { background: rgba(160,60,255,0.2); border-color: rgba(160,60,255,0.5); color: #c084fc; box-shadow: 0 0 16px rgba(160,60,255,0.2); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 500px; }
-        .card { -webkit-appearance: none; appearance: none; outline: none; font-family: inherit; -webkit-tap-highlight-color: transparent; cursor: pointer; appearance: none; -webkit-appearance: none; outline: none; text-align: center;
-                background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 28px 18px 24px; cursor: pointer; transition: all 0.3s cubic-bezier(.22,1,.36,1); text-align: center; backdrop-filter: blur(20px); position: relative; overflow: hidden; }
-        .card::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s; }
-        .card:hover { transform: translateY(-5px) scale(1.02); }
-        .card:hover::before { opacity: 1; }
-        .card:active { transform: scale(0.98); }
-        .c-truth::before  { background: linear-gradient(135deg, rgba(120,60,255,0.15), transparent); }
-        .c-knowme::before { background: linear-gradient(135deg, rgba(255,100,180,0.15), transparent); }
-        .c-mixed::before  { background: linear-gradient(135deg, rgba(255,140,0,0.15), transparent); }
-        .c-dare::before   { background: linear-gradient(135deg, rgba(255,50,80,0.15), transparent); }
-        .card:hover.c-truth  { border-color: rgba(120,60,255,0.5); box-shadow: 0 16px 40px rgba(120,60,255,0.18); }
-        .card:hover.c-knowme { border-color: rgba(255,100,180,0.5); box-shadow: 0 16px 40px rgba(255,100,180,0.18); }
-        .card:hover.c-mixed  { border-color: rgba(255,140,0,0.5); box-shadow: 0 16px 40px rgba(255,140,0,0.18); }
-        .card:hover.c-dare   { border-color: rgba(255,50,80,0.5); box-shadow: 0 16px 40px rgba(255,50,80,0.18); }
-        .card-emoji { font-size: 2.4rem; margin-bottom: 12px; display: block; }
-        .card-title { font-size: 0.95rem; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 5px; }
-        .card-desc  { font-size: 0.72rem; color: rgba(255,255,255,0.35); line-height: 1.5; }
-        .footer { margin-top: 40px; color: rgba(255,255,255,0.18); font-size: 0.72rem; letter-spacing: 0.5px; }
+        .lang-pill.active {
+            background: rgba(160,60,255,0.18);
+            border-color: rgba(160,60,255,0.5);
+            color: #c084fc;
+            box-shadow: 0 0 16px rgba(160,60,255,0.2);
+        }
+
+        /* ── GAME CARDS ── */
+        .section-label {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase; color: rgba(255,255,255,0.25);
+            margin-bottom: 16px; width: 100%; text-align: left;
+        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; margin-bottom: 32px; }
+        .card {
+            -webkit-appearance: none; appearance: none; outline: none;
+            font-family: inherit; cursor: pointer;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 28px 18px 26px;
+            text-align: center;
+            transition: all 0.35s cubic-bezier(.22,1,.36,1);
+            position: relative; overflow: hidden;
+            backdrop-filter: blur(16px);
+        }
+        .card::after {
+            content: ''; position: absolute; inset: 0; border-radius: 24px;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .card:hover { transform: translateY(-6px) scale(1.02); }
+        .card:active { transform: scale(0.97); }
+
+        /* Card color themes */
+        .c-truth { border-color: rgba(120,60,255,0.15); }
+        .c-truth:hover { border-color: rgba(120,60,255,0.55); box-shadow: 0 18px 48px rgba(120,60,255,0.2), 0 0 0 1px rgba(120,60,255,0.1); }
+        .c-truth::after { background: radial-gradient(circle at top left, rgba(120,60,255,0.12), transparent 60%); }
+        .c-truth:hover::after { opacity: 1; }
+
+        .c-knowme { border-color: rgba(255,100,180,0.15); }
+        .c-knowme:hover { border-color: rgba(255,100,180,0.55); box-shadow: 0 18px 48px rgba(255,100,180,0.2), 0 0 0 1px rgba(255,100,180,0.1); }
+        .c-knowme::after { background: radial-gradient(circle at top left, rgba(255,100,180,0.12), transparent 60%); }
+        .c-knowme:hover::after { opacity: 1; }
+
+        .c-mixed { border-color: rgba(255,140,0,0.15); }
+        .c-mixed:hover { border-color: rgba(255,140,0,0.55); box-shadow: 0 18px 48px rgba(255,140,0,0.2), 0 0 0 1px rgba(255,140,0,0.1); }
+        .c-mixed::after { background: radial-gradient(circle at top left, rgba(255,140,0,0.12), transparent 60%); }
+        .c-mixed:hover::after { opacity: 1; }
+
+        .c-dare { border-color: rgba(255,50,80,0.15); }
+        .c-dare:hover { border-color: rgba(255,50,80,0.55); box-shadow: 0 18px 48px rgba(255,50,80,0.2), 0 0 0 1px rgba(255,50,80,0.1); }
+        .c-dare::after { background: radial-gradient(circle at top left, rgba(255,50,80,0.12), transparent 60%); }
+        .c-dare:hover::after { opacity: 1; }
+
+        .badge {
+            position: absolute; top: 12px; right: 12px;
+            font-size: 0.6rem; font-weight: 800; letter-spacing: 1.5px;
+            padding: 3px 8px; border-radius: 20px;
+            text-transform: uppercase;
+        }
+        .badge-hot { background: rgba(255,140,0,0.25); color: #fbbf24; border: 1px solid rgba(255,140,0,0.35); }
+        .badge-new { background: rgba(0,200,200,0.2); color: #67e8f9; border: 1px solid rgba(0,200,200,0.3); }
+
+        .card-emoji { font-size: 2.6rem; margin-bottom: 12px; display: block; }
+        .card-title { font-size: 0.98rem; font-weight: 800; color: rgba(255,255,255,0.92); margin-bottom: 6px; }
+        .card-desc { font-size: 0.72rem; color: rgba(255,255,255,0.35); line-height: 1.55; }
+
+        /* ── TRUST BADGES ── */
+        .trust-row {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            margin-bottom: 36px; width: 100%;
+        }
+        .trust-badge {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 100px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.76rem; font-weight: 600;
+            color: rgba(255,255,255,0.55);
+        }
+
+        /* ── HOW IT WORKS ── */
+        .how-section { width: 100%; margin-bottom: 36px; }
+        .how-title {
+            font-size: 1rem; font-weight: 800; color: rgba(255,255,255,0.7);
+            margin-bottom: 16px; text-align: center;
+        }
+        .steps { display: flex; gap: 8px; width: 100%; }
+        .step {
+            flex: 1; text-align: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px; padding: 18px 12px;
+        }
+        .step-num {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 800;
+            margin: 0 auto 10px;
+        }
+        .step-text { font-size: 0.72rem; color: rgba(255,255,255,0.5); line-height: 1.5; font-weight: 500; }
+        .step-arrow { align-self: center; color: rgba(255,255,255,0.15); font-size: 1.2rem; flex-shrink: 0; }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 0.72rem; line-height: 1.8;
+        }
+        .footer a { color: rgba(255,255,255,0.3); text-decoration: none; }
+        .footer a:hover { color: rgba(255,255,255,0.6); }
+
+        /* Entry animation */
+        .hero, .lang-row, .grid, .trust-row, .how-section, .footer {
+            animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both;
+        }
+        .lang-row { animation-delay: 0.05s; }
+        .grid { animation-delay: 0.1s; }
+        .trust-row { animation-delay: 0.15s; }
+        .how-section { animation-delay: 0.2s; }
+        .footer { animation-delay: 0.25s; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
     </style>
 </head>
 <body>
 <div class="page">
-    <span class="brand-icon">🎲</span>
-    <div class="brand-name">Dare AI</div>
-    <div class="brand-sub" id="tagline">Party games for two</div>
+    <div class="hero">
+        <span class="hero-icon">🎲</span>
+        <div class="brand">Dare AI</div>
+        <div class="tagline" id="tagline">AI-powered party games for two</div>
+        <div class="sub" id="sub">Fresh questions every round. No two games ever the same.</div>
+    </div>
 
     <div class="lang-row">
         <button class="lang-pill active" onclick="setLang('en',this)">🇬🇧 English</button>
         <button class="lang-pill" onclick="setLang('fr',this)">🇫🇷 Français</button>
     </div>
 
+    <div class="section-label" id="slabel">Choose your game</div>
     <div class="grid">
-            <button class="card c-truth"  onclick="go('truth-only')"><span class="card-emoji">🤫</span><div class="card-title" id="c1">Truth Only</div><div class="card-desc" id="c1d">Deep questions, no dares</div></button>
-            <button class="card c-knowme" onclick="go('know-me')"><span class="card-emoji">💕</span><div class="card-title" id="c2">Know Me?</div><div class="card-desc" id="c2d">How well do you know each other?</div></button>
-            <button class="card c-mixed"  onclick="go('truth-or-dare')"><span class="card-emoji">🔥</span><div class="card-title" id="c3">Truth or Dare</div><div class="card-desc" id="c3d">Mix of truths & dares</div></button>
-            <button class="card c-dare"   onclick="go('dare-only')"><span class="card-emoji">😈</span><div class="card-title" id="c4">Dare Only</div><div class="card-desc" id="c4d">Challenges only</div></button>
-        </div>
+        <button class="card c-mixed" onclick="go('truth-or-dare')">
+            <span class="badge badge-hot" id="b-popular">POPULAR</span>
+            <span class="card-emoji">🔥</span>
+            <div class="card-title" id="c3">Truth or Dare</div>
+            <div class="card-desc" id="c3d">Mix of truths & dares — the classic experience</div>
+        </button>
+        <button class="card c-knowme" onclick="go('know-me')">
+            <span class="badge badge-new" id="b-new">NEW</span>
+            <span class="card-emoji">💕</span>
+            <div class="card-title" id="c2">Know Me?</div>
+            <div class="card-desc" id="c2d">How well do you really know each other?</div>
+        </button>
+        <button class="card c-truth" onclick="go('truth-only')">
+            <span class="card-emoji">🤫</span>
+            <div class="card-title" id="c1">Truth Only</div>
+            <div class="card-desc" id="c1d">Deep personal questions, no dares</div>
+        </button>
+        <button class="card c-dare" onclick="go('dare-only')">
+            <span class="card-emoji">😈</span>
+            <div class="card-title" id="c4">Dare Only</div>
+            <div class="card-desc" id="c4d">Pure challenges — no easy way out</div>
+        </button>
+    </div>
 
-    <div class="footer">Fresh AI questions every round • Controversial topics included</div>
+    <div class="trust-row">
+        <span class="trust-badge">🔒 <span id="t1">100% Private</span></span>
+        <span class="trust-badge">🤖 <span id="t2">AI-Powered</span></span>
+        <span class="trust-badge">⚡ <span id="t3">No Sign-up</span></span>
+    </div>
+
+    <div class="how-section">
+        <div class="how-title" id="how-title">How it works</div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text" id="step1">Pick a game mode</div>
+            </div>
+            <div class="step-arrow">›</div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text" id="step2">Share a room code</div>
+            </div>
+            <div class="step-arrow">›</div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text" id="step3">Play together &amp; have fun</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Made with ❤️ by <a href="https://iraady.com" target="_blank">Iraady</a>
+        &nbsp;·&nbsp; <span id="privacy">We never store your conversations</span>
+    </div>
 </div>
 <script>
-    const T = {
-        en: { tagline:'Party games for two', c1:'Truth Only', c1d:'Deep questions, no dares', c2:'Know Me?', c2d:'How well do you know each other?', c3:'Truth or Dare', c3d:'Mix of truths & dares', c4:'Dare Only', c4d:'Challenges only' },
-        fr: { tagline:'Jeux pour deux', c1:'Vérité Seule', c1d:'Questions profondes', c2:'Tu Me Connais?', c2d:'Tu connais bien l\'autre?', c3:'Action ou Vérité', c3d:'Vérités & défis mélangés', c4:'Action Seule', c4d:'Défis seulement' }
-    };
-    let lang = localStorage.getItem('dare-lang')||'en';
-    if(lang==='rw') lang='en';
-    renderLang();
-    document.querySelectorAll('.lang-pill').forEach(b=>{ if(b.textContent.includes(lang==='fr'?'Fr':'En')) b.classList.add('active'); });
+const T = {
+    en: {
+        tagline: 'AI-powered party games for two',
+        sub: 'Fresh questions every round. No two games ever the same.',
+        slabel: 'Choose your game',
+        'b-popular': 'POPULAR', 'b-new': 'NEW',
+        c3: 'Truth or Dare', c3d: 'Mix of truths & dares — the classic experience',
+        c2: 'Know Me?', c2d: 'How well do you really know each other?',
+        c1: 'Truth Only', c1d: 'Deep personal questions, no dares',
+        c4: 'Dare Only', c4d: 'Pure challenges — no easy way out',
+        t1: '100% Private', t2: 'AI-Powered', t3: 'No Sign-up',
+        'how-title': 'How it works',
+        step1: 'Pick a game mode', step2: 'Share a room code', step3: 'Play together & have fun',
+        privacy: 'We never store your conversations'
+    },
+    fr: {
+        tagline: 'Jeux IA pour deux personnes',
+        sub: 'Questions fraîches à chaque partie. Jamais deux fois pareil.',
+        slabel: 'Choisissez votre jeu',
+        'b-popular': 'POPULAIRE', 'b-new': 'NOUVEAU',
+        c3: 'Action ou Vérité', c3d: 'Mélange de vérités et défis — le classique',
+        c2: 'Tu Me Connais?', c2d: 'Vous connaissez-vous vraiment bien?',
+        c1: 'Vérité Seule', c1d: 'Questions profondes, sans défis',
+        c4: 'Action Seule', c4d: 'Défis purs — pas de sortie facile',
+        t1: '100% Privé', t2: 'Propulsé IA', t3: 'Sans inscription',
+        'how-title': 'Comment ça marche',
+        step1: 'Choisir un mode', step2: 'Partager un code', step3: 'Jouer ensemble',
+        privacy: 'Nous ne stockons jamais vos conversations'
+    }
+};
+let lang = localStorage.getItem('dare-lang') || 'en';
+if (!T[lang]) lang = 'en';
+applyLang();
 
-    function setLang(l, el) { lang=l; localStorage.setItem('dare-lang',l); document.querySelectorAll('.lang-pill').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderLang(); }
-    function renderLang() { const t=T[lang]||T.en; document.getElementById('tagline').textContent=t.tagline; ['c1','c1d','c2','c2d','c3','c3d','c4','c4d'].forEach(id=>document.getElementById(id).textContent=t[id]); }
-    function go(page) { window.location.href=`/${page}?lang=${lang}`; }
+function setLang(l, el) {
+    lang = l;
+    localStorage.setItem('dare-lang', l);
+    document.querySelectorAll('.lang-pill').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    applyLang();
+}
+function applyLang() {
+    const t = T[lang] || T.en;
+    Object.keys(t).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = t[id];
+    });
+}
+function go(page) { window.location.href = `/${page}?lang=${lang}`; }
 </script>
 </body>
 </html>

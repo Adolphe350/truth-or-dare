@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dare AI — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.09);--purple:#a03cff;--pink:#ff3c64;--teal:#00c8c8;--green:#22c55e;--text:rgba(255,255,255,0.85);--muted:rgba(255,255,255,0.35)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 10%,rgba(120,40,200,0.22) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 85% 85%,rgba(255,60,100,0.15) 0%,transparent 55%);pointer-events:none;z-index:0}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+#login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(120,40,200,0.25) 0%,transparent 60%);pointer-events:none}
+.login-box{position:relative;z-index:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:48px 40px;width:100%;max-width:380px;text-align:center;backdrop-filter:blur(20px)}
+.login-icon{font-size:3rem;margin-bottom:16px;display:block;filter:drop-shadow(0 0 24px rgba(160,60,255,0.5))}
+.login-title{font-size:1.6rem;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,#fff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-sub{font-size:0.82rem;color:var(--muted);margin-bottom:28px}
+.login-input{width:100%;padding:14px 18px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:#fff;font-size:1rem;font-family:inherit;outline:none;margin-bottom:12px;transition:border-color 0.2s}
+.login-input:focus{border-color:rgba(160,60,255,0.5)}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:14px;color:#fff;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity 0.2s,transform 0.15s}
+.login-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.login-btn:active{transform:scale(0.98)}
+.login-err{color:#f87171;font-size:0.8rem;margin-top:8px;min-height:20px}
+
+/* DASHBOARD */
+#dashboard{display:none;position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:28px 24px 60px}
+
+/* Header */
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+.dash-title{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,#fff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.dash-meta{font-size:0.75rem;color:var(--muted)}
+.dash-actions{display:flex;gap:10px;align-items:center}
+.btn-refresh{padding:9px 20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:rgba(255,255,255,0.7);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s}
+.btn-refresh:hover{background:rgba(255,255,255,0.1);color:#fff}
+.btn-logout{padding:9px 20px;background:rgba(255,60,80,0.1);border:1px solid rgba(255,60,80,0.25);border-radius:12px;color:#f87171;font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s}
+.btn-logout:hover{background:rgba(255,60,80,0.2)}
+
+/* Live indicator */
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.7);animation:pulse 2s infinite;margin-right:6px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Stats cards */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:700px){.stats-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:400px){.stats-grid{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;transition:border-color 0.2s}
+.stat-card:hover{border-color:rgba(255,255,255,0.18)}
+.stat-icon{font-size:1.6rem;margin-bottom:10px}
+.stat-val{font-size:2rem;font-weight:900;line-height:1;margin-bottom:4px;background:linear-gradient(135deg,#fff,rgba(200,150,255,0.9));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase}
+
+/* Charts row */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;margin-bottom:24px}
+@media(max-width:800px){.charts-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px}
+.chart-title{font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.chart-wrap{position:relative;height:180px;display:flex;align-items:center;justify-content:center}
+
+/* Bottom grid */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.bottom-grid{grid-template-columns:1fr}}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px}
+.info-title{font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* Live status */
+.live-row{display:flex;gap:10px;flex-wrap:wrap}
+.live-chip{flex:1;min-width:120px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;text-align:center}
+.live-chip-val{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,#fff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.live-chip-label{font-size:0.68rem;color:var(--muted);margin-top:4px;font-weight:600}
+
+/* Activity feed */
+.activity-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
+.activity-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-join{background:#22c55e}
+.activity-name{font-size:0.82rem;font-weight:600;flex:1}
+.activity-meta{font-size:0.68rem;color:var(--muted)}
+.activity-time{font-size:0.65rem;color:rgba(255,255,255,0.2)}
+
+/* Active rooms */
+.rooms-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
+.room-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px}
+.room-code{font-size:0.85rem;font-weight:800;font-family:monospace;color:#c084fc;flex-shrink:0;min-width:60px}
+.room-players{font-size:0.75rem;font-weight:600;flex:1}
+.room-type{font-size:0.65rem;color:var(--muted);background:rgba(255,255,255,0.06);padding:3px 8px;border-radius:6px}
+
+/* Scrollbar */
+.activity-list::-webkit-scrollbar,.rooms-list::-webkit-scrollbar{width:4px}
+.activity-list::-webkit-scrollbar-track,.rooms-list::-webkit-scrollbar-track{background:transparent}
+.activity-list::-webkit-scrollbar-thumb,.rooms-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+.empty-state{color:var(--muted);font-size:0.8rem;text-align:center;padding:20px}
+
+/* Refresh countdown */
+.countdown{font-size:0.72rem;color:rgba(255,255,255,0.2)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <span class="login-icon">🎲</span>
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">Dare AI — Dashboard</div>
+    <input type="password" class="login-input" id="pw-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Enter Dashboard</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">🎲 Dare AI — Admin</div>
+      <div class="dash-meta"><span class="live-dot"></span>Live &nbsp;·&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;·&nbsp; <span class="countdown">Refreshing in <span id="countdown">30</span>s</span></div>
+    </div>
+    <div class="dash-actions">
+      <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">👁️</div><div class="stat-val" id="s-visits">—</div><div class="stat-label">Total Visits</div></div>
+    <div class="stat-card"><div class="stat-icon">🎮</div><div class="stat-val" id="s-games">—</div><div class="stat-label">Games Started</div></div>
+    <div class="stat-card"><div class="stat-icon">❓</div><div class="stat-val" id="s-questions">—</div><div class="stat-label">Questions AI'd</div></div>
+    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-val" id="s-players">—</div><div class="stat-label">Total Players</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Game Types</div>
+      <div class="chart-wrap"><canvas id="chart-types"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Languages</div>
+      <div class="chart-wrap"><canvas id="chart-langs"></canvas></div>
+    </div>
+    <div class="chart-card" style="grid-column: span 1">
+      <div class="chart-title">Daily Activity (14 days)</div>
+      <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom-grid">
+    <!-- Live Rooms -->
+    <div class="info-card">
+      <div class="info-title"><span class="live-dot"></span> Live Now</div>
+      <div class="live-row" style="margin-bottom:16px">
+        <div class="live-chip"><div class="live-chip-val" id="s-rooms">0</div><div class="live-chip-label">Active Rooms</div></div>
+        <div class="live-chip"><div class="live-chip-val" id="s-top-type">—</div><div class="live-chip-label">Top Game</div></div>
+        <div class="live-chip"><div class="live-chip-val" id="s-top-lang">—</div><div class="live-chip-label">Top Language</div></div>
+      </div>
+      <div class="chart-title">Active Rooms</div>
+      <div class="rooms-list" id="rooms-list"><div class="empty-state">No active rooms right now</div></div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="info-card">
+      <div class="info-title">Recent Activity</div>
+      <div class="activity-list" id="activity-list"><div class="empty-state">No activity yet</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let pw = sessionStorage.getItem('dare_admin_pw') || '';
+let charts = {};
+let countdown = 30;
+let countdownTimer;
+
+// Auto-login if pw stored
+if (pw) showDashboard();
+
+function doLogin() {
+  const val = document.getElementById('pw-input').value.trim();
+  if (!val) return;
+  fetch(`/api/admin/stats?pw=${encodeURIComponent(val)}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) {
+        document.getElementById('login-err').textContent = 'Wrong password. Try again.';
+      } else {
+        pw = val;
+        sessionStorage.setItem('dare_admin_pw', pw);
+        showDashboard();
+      }
+    })
+    .catch(() => document.getElementById('login-err').textContent = 'Connection error. Try again.');
+}
+
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadData();
+  startCountdown();
+}
+
+function doLogout() {
+  sessionStorage.removeItem('dare_admin_pw');
+  pw = '';
+  clearInterval(countdownTimer);
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+}
+
+function startCountdown() {
+  clearInterval(countdownTimer);
+  countdown = 30;
+  document.getElementById('countdown').textContent = countdown;
+  countdownTimer = setInterval(() => {
+    countdown--;
+    document.getElementById('countdown').textContent = countdown;
+    if (countdown <= 0) { countdown = 30; loadData(); }
+  }, 1000);
+}
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return String(n || 0);
+}
+
+function timeAgo(ts) {
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if (diff < 60) return Math.floor(diff) + 's ago';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function typeLabel(t) {
+  const m = {'truth-or-dare':'T or D','truth-only':'Truth','dare-only':'Dare','know-me':'Know Me'};
+  return m[t] || t || '?';
+}
+
+function loadData() {
+  countdown = 30;
+  document.getElementById('countdown').textContent = countdown;
+  fetch(`/api/admin/stats?pw=${encodeURIComponent(pw)}`)
+    .then(r => r.json())
+    .then(renderDashboard)
+    .catch(e => console.error('Stats load error:', e));
+}
+
+function renderDashboard(d) {
+  if (d.error) { doLogout(); return; }
+
+  // Update timestamp
+  document.getElementById('last-updated').textContent = d.lastUpdated ? new Date(d.lastUpdated).toLocaleTimeString() : '—';
+
+  // Stats cards
+  document.getElementById('s-visits').textContent = fmt(d.totalVisits);
+  document.getElementById('s-games').textContent = fmt(d.totalGamesStarted);
+  document.getElementById('s-questions').textContent = fmt(d.totalQuestionsGenerated);
+  document.getElementById('s-players').textContent = fmt(d.totalPlayers);
+  document.getElementById('s-rooms').textContent = d.activeRoomsCount || 0;
+
+  // Top game type
+  const gc = d.gameTypeCounts || {};
+  const topType = Object.entries(gc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('s-top-type').textContent = topType ? typeLabel(topType[0]) : '—';
+
+  // Top lang
+  const lc = d.langCounts || {};
+  const topLang = Object.entries(lc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('s-top-lang').textContent = topLang ? topLang[0].toUpperCase() : '—';
+
+  // Charts
+  renderTypeChart(gc);
+  renderLangChart(lc);
+  renderDailyChart(d.dailyStats || {});
+
+  // Active rooms
+  const roomsEl = document.getElementById('rooms-list');
+  if (d.activeRooms && d.activeRooms.length > 0) {
+    roomsEl.innerHTML = d.activeRooms.map(r => `
+      <div class="room-item">
+        <span class="room-code">${r.id}</span>
+        <span class="room-players">${r.players.join(' vs ') || 'waiting'}</span>
+        <span class="room-type">${typeLabel(r.gameType)}</span>
+      </div>`).join('');
+  } else {
+    roomsEl.innerHTML = '<div class="empty-state">No active rooms right now</div>';
+  }
+
+  // Activity feed
+  const actEl = document.getElementById('activity-list');
+  if (d.recentActivity && d.recentActivity.length > 0) {
+    actEl.innerHTML = d.recentActivity.map(a => `
+      <div class="activity-item">
+        <span class="activity-dot dot-join"></span>
+        <span class="activity-name">${a.name || '?'}</span>
+        <span class="activity-meta">${typeLabel(a.gameType)} · ${(a.lang||'').toUpperCase()}</span>
+        <span class="activity-time">${timeAgo(a.ts)}</span>
+      </div>`).join('');
+  } else {
+    actEl.innerHTML = '<div class="empty-state">No activity yet</div>';
+  }
+}
+
+function renderTypeChart(gc) {
+  const labels = ['Truth or Dare','Truth Only','Dare Only','Know Me'];
+  const data = [gc['truth-or-dare']||0, gc['truth-only']||0, gc['dare-only']||0, gc['know-me']||0];
+  const colors = ['rgba(255,140,0,0.8)','rgba(120,60,255,0.8)','rgba(255,50,80,0.8)','rgba(255,100,180,0.8)'];
+  if (charts.types) { charts.types.data.datasets[0].data = data; charts.types.update(); return; }
+  const ctx = document.getElementById('chart-types').getContext('2d');
+  charts.types = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: 'transparent', borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'bottom', labels: { color:'rgba(255,255,255,0.5)', font:{size:10}, padding:8, boxWidth:10 } }
+      },
+      cutout: '65%'
+    }
+  });
+}
+
+function renderLangChart(lc) {
+  const labels = ['English','Français'];
+  const data = [lc.en||0, lc.fr||0];
+  if (charts.langs) { charts.langs.data.datasets[0].data = data; charts.langs.update(); return; }
+  const ctx = document.getElementById('chart-langs').getContext('2d');
+  charts.langs = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data, borderRadius: 8, borderSkipped: false,
+        backgroundColor: ['rgba(160,60,255,0.7)','rgba(255,60,100,0.7)']
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display:false }, ticks: { color:'rgba(255,255,255,0.4)', font:{size:10} } },
+        y: { grid: { color:'rgba(255,255,255,0.05)' }, ticks: { color:'rgba(255,255,255,0.3)', font:{size:10} } }
+      }
+    }
+  });
+}
+
+function renderDailyChart(dailyStats) {
+  const days = [];
+  const visits = []; const games = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    days.push(key.slice(5)); // MM-DD
+    const s = dailyStats[key] || {};
+    visits.push(s.visits || 0);
+    games.push(s.games || 0);
+  }
+  if (charts.daily) {
+    charts.daily.data.labels = days;
+    charts.daily.data.datasets[0].data = visits;
+    charts.daily.data.datasets[1].data = games;
+    charts.daily.update(); return;
+  }
+  const ctx = document.getElementById('chart-daily').getContext('2d');
+  charts.daily = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [
+        { label:'Visits', data:visits, borderColor:'rgba(160,60,255,0.8)', backgroundColor:'rgba(160,60,255,0.08)', borderWidth:2, pointRadius:3, fill:true, tension:0.4 },
+        { label:'Games', data:games, borderColor:'rgba(255,60,100,0.8)', backgroundColor:'rgba(255,60,100,0.08)', borderWidth:2, pointRadius:3, fill:true, tension:0.4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'rgba(255,255,255,0.5)', font:{size:10}, boxWidth:10 } } },
+      scales: {
+        x: { grid: { display:false }, ticks: { color:'rgba(255,255,255,0.3)', font:{size:9}, maxRotation:45 } },
+        y: { grid: { color:'rgba(255,255,255,0.05)' }, ticks: { color:'rgba(255,255,255,0.3)', font:{size:10} } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

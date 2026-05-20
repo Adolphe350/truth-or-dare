@@ -11,6 +11,12 @@
 <body>
 <div class="container">
 
+    <div class="game-header">
+        <a href="/" class="game-header-back">← Back</a>
+        <span class="game-header-brand">🎲 Dare AI</span>
+        <div class="game-header-spacer"></div>
+    </div>
+
     <div class="screen active" id="s-welcome">
         <div class="logo">💕</div>
         <h1>Know Me?</h1>
@@ -23,7 +29,6 @@
             📖 <strong>How it works:</strong><br>
             A question about one player → the other guesses out loud → they reveal → both tap Next
         </div>
-        <a href="/" class="back-link">← All games</a>
     </div>
 
     <div class="screen" id="s-same">
@@ -64,6 +69,7 @@
     </div>
 
     <div class="screen" id="s-game">
+        <div class="round-counter" id="round-counter">🎲 Round 1</div>
         <div class="question-card" id="q-card">
             <div class="target" id="q-label">QUESTION FOR</div>
             <div class="player-name" id="q-player"></div>
@@ -76,7 +82,7 @@
             <div class="confirmation-dot" id="dot2"></div>
             <span id="conf-label">Both tap Next</span>
         </div>
-        <button class="btn btn-confirm" id="next-btn" onclick="tapNext()">Next ➡️</button>
+        <button class="btn-next" id="next-btn" onclick="tapNext()">Next ➡️</button>
     </div>
 
 </div>
@@ -135,15 +141,18 @@ function startGame() {
 function tapNext() {
     if(confirmed && !sameDevice) return;
     confirmed=true;
-    $('next-btn').className='btn btn-confirm confirmed-me';
+    $('next-btn').disabled=true;
     $('next-btn').textContent=sameDevice?'✅ Next loading…':'✅ Waiting for them…';
     $('other-ready-badge').style.display='none';
     socket.emit('confirm-next',{});
 }
 
+let roundNum=0;
 function resetGame(data) {
+    roundNum++;
+    if($("round-counter")) $("round-counter").textContent=`🎲 Round ${roundNum}`;
     show('s-game'); confirmed=false;
-    $('next-btn').className='btn btn-confirm';
+    $('next-btn').disabled=false;
     $('next-btn').textContent='Next ➡️';
     $('dot1').classList.remove('active');
     $('dot2').classList.remove('active');
@@ -151,7 +160,8 @@ function resetGame(data) {
     $('conf-label').textContent=sameDevice?'Tap Next':'Both tap Next';
 
     const card=$('q-card'); card.style.animation='none';
-    requestAnimationFrame(()=>{ card.style.animation='cardIn 0.5s cubic-bezier(.22,1,.36,1) both'; });
+    requestAnimationFrame(()=>{ card.className='question-card type-know';
+        card.style.animation='cardIn 0.45s cubic-bezier(.22,1,.36,1) both'; });
 
     if(data.isHotTake) {
         card.className='question-card hot-take-card';

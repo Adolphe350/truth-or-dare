@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -10,11 +11,146 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
+// ===================== STATS =====================
+
+const DATA_DIR = path.join(__dirname, 'data');
+const STATS_FILE = path.join(DATA_DIR, 'stats.json');
+const ACTIVITY_FILE = path.join(DATA_DIR, 'activity.json');
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+let stats = {
+  totalVisits: 0,
+  totalRoomsCreated: 0,
+  totalGamesStarted: 0,
+  totalQuestionsGenerated: 0,
+  totalPlayers: 0,
+  uniqueNames: [],
+  gameTypeCounts: { 'truth-or-dare': 0, 'truth-only': 0, 'dare-only': 0, 'know-me': 0 },
+  langCounts: { en: 0, fr: 0 },
+  dailyStats: {},
+  lastUpdated: null
+};
+
+let recentActivity = []; // last 50 events
+
+try {
+  if (fs.existsSync(STATS_FILE)) {
+    const loaded = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+    stats = { ...stats, ...loaded };
+    if (!Array.isArray(stats.uniqueNames)) stats.uniqueNames = [];
+  }
+  if (fs.existsSync(ACTIVITY_FILE)) {
+    recentActivity = JSON.parse(fs.readFileSync(ACTIVITY_FILE, 'utf8'));
+  }
+} catch(e) { console.error('Stats load error:', e.message); }
+
+function saveStats() {
+  try {
+    stats.lastUpdated = new Date().toISOString();
+    fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 2));
+    fs.writeFileSync(ACTIVITY_FILE, JSON.stringify(recentActivity.slice(0,50), null, 2));
+  } catch(e) { console.error('Stats save error:', e.message); }
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function trackVisit() {
+  try {
+    stats.totalVisits++;
+    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    stats.dailyStats[d].visits++;
+    saveStats();
+  } catch(e) {}
+}
+
+function trackRoom(gameType, lang) {
+  try {
+    stats.totalRoomsCreated++;
+    if (stats.gameTypeCounts[gameType] !== undefined) stats.gameTypeCounts[gameType]++;
+    if (stats.langCounts[lang] !== undefined) stats.langCounts[lang]++;
+    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    stats.dailyStats[d].rooms++;
+    saveStats();
+  } catch(e) {}
+}
+
+function trackGame() {
+  try {
+    stats.totalGamesStarted++;
+    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    stats.dailyStats[d].games++;
+    saveStats();
+  } catch(e) {}
+}
+
+function trackQuestion() {
+  try {
+    stats.totalQuestionsGenerated++;
+    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    stats.dailyStats[d].questions++;
+    if (stats.totalQuestionsGenerated % 10 === 0) saveStats(); // save every 10 questions
+  } catch(e) {}
+}
+
+function trackPlayer(name, roomId, gameType, lang) {
+  try {
+    stats.totalPlayers++;
+    if (!stats.uniqueNames.includes(name)) stats.uniqueNames.push(name);
+    recentActivity.unshift({ type:'join', name, roomId, gameType, lang, ts: new Date().toISOString() });
+    recentActivity = recentActivity.slice(0, 50);
+    saveStats();
+  } catch(e) {}
+}
+
+// ===================== ADMIN ROUTES =====================
+
+const ADMIN_PW = process.env.ADMIN_PASSWORD || 'dare-admin-2025';
+
+app.get('/admin', (req, res) => {
+  if (req.query.pw !== ADMIN_PW && req.headers['x-admin-pw'] !== ADMIN_PW) {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    return;
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/api/admin/stats', (req, res) => {
+  if (req.query.pw !== ADMIN_PW && req.headers['x-admin-pw'] !== ADMIN_PW) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const activeRooms = [];
+  for (const [id, room] of rooms) {
+    activeRooms.push({
+      id, gameType: room.gameType, lang: room.lang,
+      players: room.players.map(p => p.name),
+      rounds: room.currentRound, started: room.gameStarted || false
+    });
+  }
+  res.json({
+    ...stats,
+    uniqueNamesCount: stats.uniqueNames.length,
+    uniqueNames: stats.uniqueNames.slice(-20),
+    activeRooms,
+    activeRoomsCount: rooms.size,
+    recentActivity: recentActivity.slice(0, 20),
+    serverTime: new Date().toISOString()
+  });
+});
+
+// ===================== END STATS =====================
+
 app.use(express.json());
-app.get('/truth-or-dare', (req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-or-dare.html')));
-app.get('/know-me',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'know-me.html')));
-app.get('/truth-only',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-only.html')));
-app.get('/dare-only',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'dare-only.html')));
+
+function withVisitTracking(handler) {
+  return (req, res) => { trackVisit(); handler(req, res); };
+}
+
+app.get('/truth-or-dare', withVisitTracking((req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-or-dare.html'))));
+app.get('/know-me',       withVisitTracking((req, res) => res.sendFile(path.join(__dirname, 'public', 'know-me.html'))));
+app.get('/truth-only',    withVisitTracking((req, res) => res.sendFile(path.join(__dirname, 'public', 'truth-only.html'))));
+app.get('/dare-only',     withVisitTracking((req, res) => res.sendFile(path.join(__dirname, 'public', 'dare-only.html'))));
+app.get('/',              withVisitTracking((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'))));
 app.get('/test-ai',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'test-ai.html')));
 app.post('/api/test-ai',  async (req, res) => {
   try {
@@ -187,6 +323,7 @@ async function sendNextQuestion(room) {
     room.previousQuestions.push(q);
     const p1 = room.players[0]?.name || 'Player 1';
     const p2 = room.players[1]?.name || 'Player 2';
+    trackQuestion();
     io.to(room.id).emit('new-question', {
       question: q.replace(/^(TOPIC:|SUJET:)\s*/i,''),
       targetPlayer: `${p1} & ${p2}`,
@@ -213,6 +350,7 @@ async function sendNextQuestion(room) {
     else question = await generateTruthOrDare(target.name, room.previousQuestions, room.lang, room.gameType);
   }
   room.previousQuestions.push(question);
+  trackQuestion();
 
   // Refill both queues in background
   const minQ = Math.min((room.queues?.[0]||[]).length, (room.queues?.[1]||[]).length);
@@ -237,7 +375,8 @@ io.on('connection', (socket) => {
     const roomId = (data.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,6);
     if (!roomId) { socket.emit('error', { message: 'Enter a room code.' }); return; }
 
-    if (!rooms.has(roomId)) {
+    const isNewRoom = !rooms.has(roomId);
+    if (isNewRoom) {
       // Create the room
       rooms.set(roomId, {
         id: roomId,
@@ -251,8 +390,10 @@ io.on('connection', (socket) => {
         sameDevice: false,
         currentRound: 0,
         hotTopicsUsed: 0,
-        refilling: false
+        refilling: false,
+        gameStarted: false
       });
+      trackRoom(data.gameType||'truth-or-dare', data.lang||'en');
     }
 
     const room = rooms.get(roomId);
@@ -264,6 +405,7 @@ io.on('connection', (socket) => {
       // Remove stale entry for same name then add
       room.players = room.players.filter(p => p.name !== data.name);
       room.players.push({ id: socket.id, name: data.name });
+      trackPlayer(data.name, roomId, room.gameType, room.lang);
     }
 
     socket.join(roomId);
@@ -303,13 +445,16 @@ io.on('connection', (socket) => {
         sameDevice: data.sameDevice||false,
         currentRound: 0,
         hotTopicsUsed: 0,
-        refilling: false
+        refilling: false,
+        gameStarted: false
       });
+      trackRoom(data.gameType||'truth-or-dare', data.lang||'en');
     }
     const room = rooms.get(roomId);
     // Remove stale socket entry for same name
     room.players = room.players.filter(p => p.name !== data.name);
     room.players.push({ id: socket.id, name: data.name });
+    trackPlayer(data.name, roomId, room.gameType, room.lang);
     socket.join(roomId);
     socket.roomId = roomId;
     socket.playerName = data.name;
@@ -345,6 +490,8 @@ io.on('connection', (socket) => {
     if (!room || room.players.length < 2) return;
     room.confirmations.clear();
     room.confirmedPlayers.clear();
+    room.gameStarted = true;
+    trackGame();
     // Pre-generate 20 questions immediately
     refillQueue(room);
     // Small delay to let first batch generate, then send first question
