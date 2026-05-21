@@ -29,6 +29,7 @@ let stats = {
   gameTypeCounts: { 'truth-or-dare': 0, 'truth-only': 0, 'dare-only': 0, 'know-me': 0 },
   langCounts: { en: 0, fr: 0 },
   dailyStats: {},
+  monthlyStats: {},
   lastUpdated: null
 };
 
@@ -54,12 +55,37 @@ function saveStats() {
 }
 
 function today() { return new Date().toISOString().split('T')[0]; }
+function monthKey(dateStr = today()) { return String(dateStr).slice(0, 7); }
+function emptyBucket() { return { visits:0, rooms:0, games:0, questions:0 }; }
+function emptyAggregate() {
+  return {
+    totalVisits: 0,
+    totalRoomsCreated: 0,
+    totalGamesStarted: 0,
+    totalQuestionsGenerated: 0,
+    totalPlayers: 0,
+    uniqueNames: [],
+    gameTypeCounts: { 'truth-or-dare': 0, 'truth-only': 0, 'dare-only': 0, 'know-me': 0 },
+    langCounts: { en: 0, fr: 0 },
+    dailyStats: {}
+  };
+}
+function ensureDay(dateStr) {
+  if (!stats.dailyStats[dateStr]) stats.dailyStats[dateStr] = emptyBucket();
+  const mk = monthKey(dateStr);
+  if (!stats.monthlyStats[mk]) stats.monthlyStats[mk] = emptyAggregate();
+  if (!stats.monthlyStats[mk].dailyStats[dateStr]) stats.monthlyStats[mk].dailyStats[dateStr] = emptyBucket();
+}
 
 function trackVisit() {
   try {
     stats.totalVisits++;
-    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    const d = today();
+    const mk = monthKey(d);
+    ensureDay(d);
     stats.dailyStats[d].visits++;
+    stats.monthlyStats[mk].totalVisits++;
+    stats.monthlyStats[mk].dailyStats[d].visits++;
     saveStats();
   } catch(e) {}
 }
@@ -69,8 +95,14 @@ function trackRoom(gameType, lang) {
     stats.totalRoomsCreated++;
     if (stats.gameTypeCounts[gameType] !== undefined) stats.gameTypeCounts[gameType]++;
     if (stats.langCounts[lang] !== undefined) stats.langCounts[lang]++;
-    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    const d = today();
+    const mk = monthKey(d);
+    ensureDay(d);
     stats.dailyStats[d].rooms++;
+    stats.monthlyStats[mk].totalRoomsCreated++;
+    stats.monthlyStats[mk].dailyStats[d].rooms++;
+    if (stats.monthlyStats[mk].gameTypeCounts[gameType] !== undefined) stats.monthlyStats[mk].gameTypeCounts[gameType]++;
+    if (stats.monthlyStats[mk].langCounts[lang] !== undefined) stats.monthlyStats[mk].langCounts[lang]++;
     saveStats();
   } catch(e) {}
 }
@@ -78,8 +110,12 @@ function trackRoom(gameType, lang) {
 function trackGame() {
   try {
     stats.totalGamesStarted++;
-    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    const d = today();
+    const mk = monthKey(d);
+    ensureDay(d);
     stats.dailyStats[d].games++;
+    stats.monthlyStats[mk].totalGamesStarted++;
+    stats.monthlyStats[mk].dailyStats[d].games++;
     saveStats();
   } catch(e) {}
 }
@@ -87,8 +123,12 @@ function trackGame() {
 function trackQuestion() {
   try {
     stats.totalQuestionsGenerated++;
-    const d = today(); if (!stats.dailyStats[d]) stats.dailyStats[d] = { visits:0, rooms:0, games:0, questions:0 };
+    const d = today();
+    const mk = monthKey(d);
+    ensureDay(d);
     stats.dailyStats[d].questions++;
+    stats.monthlyStats[mk].totalQuestionsGenerated++;
+    stats.monthlyStats[mk].dailyStats[d].questions++;
     if (stats.totalQuestionsGenerated % 10 === 0) saveStats(); // save every 10 questions
   } catch(e) {}
 }
@@ -97,28 +137,72 @@ function trackPlayer(name, roomId, gameType, lang) {
   try {
     stats.totalPlayers++;
     if (!stats.uniqueNames.includes(name)) stats.uniqueNames.push(name);
+    const mk = monthKey();
+    if (!stats.monthlyStats[mk]) stats.monthlyStats[mk] = emptyAggregate();
+    stats.monthlyStats[mk].totalPlayers++;
+    if (!stats.monthlyStats[mk].uniqueNames.includes(name)) stats.monthlyStats[mk].uniqueNames.push(name);
     recentActivity.unshift({ type:'join', name, roomId, gameType, lang, ts: new Date().toISOString() });
     recentActivity = recentActivity.slice(0, 50);
     saveStats();
   } catch(e) {}
 }
 
+function buildScopedStats(scopeMonth) {
+  if (!scopeMonth || scopeMonth === 'all') {
+    return {
+      scope: 'all',
+      month: 'all',
+      totalVisits: stats.totalVisits,
+      totalRoomsCreated: stats.totalRoomsCreated,
+      totalGamesStarted: stats.totalGamesStarted,
+      totalQuestionsGenerated: stats.totalQuestionsGenerated,
+      totalPlayers: stats.totalPlayers,
+      uniqueNames: Array.isArray(stats.uniqueNames) ? stats.uniqueNames : [],
+      gameTypeCounts: stats.gameTypeCounts || emptyAggregate().gameTypeCounts,
+      langCounts: stats.langCounts || emptyAggregate().langCounts,
+      dailyStats: stats.dailyStats || {},
+      monthsAvailable: Object.keys(stats.monthlyStats || {}).sort().reverse()
+    };
+  }
+
+  const monthData = stats.monthlyStats?.[scopeMonth] || emptyAggregate();
+  return {
+    scope: 'month',
+    month: scopeMonth,
+    totalVisits: monthData.totalVisits || 0,
+    totalRoomsCreated: monthData.totalRoomsCreated || 0,
+    totalGamesStarted: monthData.totalGamesStarted || 0,
+    totalQuestionsGenerated: monthData.totalQuestionsGenerated || 0,
+    totalPlayers: monthData.totalPlayers || 0,
+    uniqueNames: Array.isArray(monthData.uniqueNames) ? monthData.uniqueNames : [],
+    gameTypeCounts: monthData.gameTypeCounts || emptyAggregate().gameTypeCounts,
+    langCounts: monthData.langCounts || emptyAggregate().langCounts,
+    dailyStats: monthData.dailyStats || {},
+    monthsAvailable: Object.keys(stats.monthlyStats || {}).sort().reverse()
+  };
+}
+
 // ===================== ADMIN ROUTES =====================
 
-const ADMIN_PW = process.env.ADMIN_PASSWORD || 'dare-admin-2025';
+const ADMIN_USER = process.env.ADMIN_USERNAME || 'irankundaadolphe@gmail.com';
+const ADMIN_PW = process.env.ADMIN_PASSWORD || 'Pindiri2020@';
+
+function isAdmin(req) {
+  const username = String(req.query.username || req.headers['x-admin-user'] || '').trim().toLowerCase();
+  const password = String(req.query.password || req.query.pw || req.headers['x-admin-pw'] || '').trim();
+  return username === ADMIN_USER.toLowerCase() && password === ADMIN_PW;
+}
 
 app.get('/admin', (req, res) => {
-  if (req.query.pw !== ADMIN_PW && req.headers['x-admin-pw'] !== ADMIN_PW) {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-    return;
-  }
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.get('/api/admin/stats', (req, res) => {
-  if (req.query.pw !== ADMIN_PW && req.headers['x-admin-pw'] !== ADMIN_PW) {
+  if (!isAdmin(req)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  const scopeMonth = (req.query.month || 'all').trim();
+  const scoped = buildScopedStats(scopeMonth);
   const activeRooms = [];
   for (const [id, room] of rooms) {
     activeRooms.push({
@@ -128,13 +212,17 @@ app.get('/api/admin/stats', (req, res) => {
     });
   }
   res.json({
-    ...stats,
-    uniqueNamesCount: stats.uniqueNames.length,
-    uniqueNames: stats.uniqueNames.slice(-20),
+    ...scoped,
+    lastUpdated: stats.lastUpdated,
+    uniqueNamesCount: scoped.uniqueNames.length,
+    uniqueNames: scoped.uniqueNames.slice(-20),
     activeRooms,
     activeRoomsCount: rooms.size,
-    recentActivity: recentActivity.slice(0, 20),
-    serverTime: new Date().toISOString()
+    recentActivity: scopeMonth === 'all'
+      ? recentActivity.slice(0, 20)
+      : recentActivity.filter(a => String(a.ts || '').startsWith(scopeMonth + '-')).slice(0, 20),
+    serverTime: new Date().toISOString(),
+    adminUser: ADMIN_USER
   });
 });
 

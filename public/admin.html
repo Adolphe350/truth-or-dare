@@ -108,7 +108,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <span class="login-icon">🎲</span>
     <div class="login-title">Admin Access</div>
     <div class="login-sub">Dare AI — Dashboard</div>
-    <input type="password" class="login-input" id="pw-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="text" class="login-input" id="user-input" placeholder="Admin username" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" class="login-input" id="pw-input" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Enter Dashboard</button>
     <div class="login-err" id="login-err"></div>
   </div>
@@ -122,6 +123,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="dash-meta"><span class="live-dot"></span>Live &nbsp;·&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;·&nbsp; <span class="countdown">Refreshing in <span id="countdown">30</span>s</span></div>
     </div>
     <div class="dash-actions">
+      <select id="month-select" class="btn-refresh" onchange="loadData()" style="min-width:160px">
+        <option value="all">All time</option>
+      </select>
       <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
       <button class="btn-logout" onclick="doLogout()">Logout</button>
     </div>
@@ -146,7 +150,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="chart-wrap"><canvas id="chart-langs"></canvas></div>
     </div>
     <div class="chart-card" style="grid-column: span 1">
-      <div class="chart-title">Daily Activity (14 days)</div>
+      <div class="chart-title" id="daily-chart-title">Daily Activity</div>
       <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
     </div>
   </div>
@@ -174,24 +178,28 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 </div>
 
 <script>
+let adminUser = sessionStorage.getItem('dare_admin_user') || '';
 let pw = sessionStorage.getItem('dare_admin_pw') || '';
 let charts = {};
 let countdown = 30;
 let countdownTimer;
 
-// Auto-login if pw stored
-if (pw) showDashboard();
+// Auto-login if creds stored
+if (adminUser && pw) showDashboard();
 
 function doLogin() {
-  const val = document.getElementById('pw-input').value.trim();
-  if (!val) return;
-  fetch(`/api/admin/stats?pw=${encodeURIComponent(val)}`)
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) {
-        document.getElementById('login-err').textContent = 'Wrong password. Try again.';
+  const userVal = document.getElementById('user-input').value.trim();
+  const passVal = document.getElementById('pw-input').value.trim();
+  if (!userVal || !passVal) return;
+  fetch(`/api/admin/stats?username=${encodeURIComponent(userVal)}&password=${encodeURIComponent(passVal)}&month=all`)
+    .then(async r => ({ ok: r.ok, data: await r.json() }))
+    .then(({ ok, data }) => {
+      if (!ok || data.error) {
+        document.getElementById('login-err').textContent = 'Wrong username or password.';
       } else {
-        pw = val;
+        adminUser = userVal;
+        pw = passVal;
+        sessionStorage.setItem('dare_admin_user', adminUser);
         sessionStorage.setItem('dare_admin_pw', pw);
         showDashboard();
       }
@@ -202,16 +210,21 @@ function doLogin() {
 function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('user-input').value = adminUser;
+  populateMonthSelect([]);
   loadData();
   startCountdown();
 }
 
 function doLogout() {
+  sessionStorage.removeItem('dare_admin_user');
   sessionStorage.removeItem('dare_admin_pw');
+  adminUser = '';
   pw = '';
   clearInterval(countdownTimer);
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('user-input').value = '';
   document.getElementById('pw-input').value = '';
 }
 
@@ -245,10 +258,23 @@ function typeLabel(t) {
   return m[t] || t || '?';
 }
 
+function currentMonthFilter() {
+  return document.getElementById('month-select')?.value || 'all';
+}
+
+function populateMonthSelect(months) {
+  const sel = document.getElementById('month-select');
+  if (!sel) return;
+  const current = sel.value || 'all';
+  sel.innerHTML = `<option value="all">All time</option>` + (months || []).map(m => `<option value="${m}">${m}</option>`).join('');
+  if (["all", ...(months || [])].includes(current)) sel.value = current;
+}
+
 function loadData() {
   countdown = 30;
   document.getElementById('countdown').textContent = countdown;
-  fetch(`/api/admin/stats?pw=${encodeURIComponent(pw)}`)
+  const month = currentMonthFilter();
+  fetch(`/api/admin/stats?username=${encodeURIComponent(adminUser)}&password=${encodeURIComponent(pw)}&month=${encodeURIComponent(month)}`)
     .then(r => r.json())
     .then(renderDashboard)
     .catch(e => console.error('Stats load error:', e));
@@ -257,8 +283,15 @@ function loadData() {
 function renderDashboard(d) {
   if (d.error) { doLogout(); return; }
 
+  populateMonthSelect(d.monthsAvailable || []);
+  if ((d.month && d.month !== 'all') || d.scope === 'month') {
+    document.getElementById('month-select').value = d.month;
+  }
+
   // Update timestamp
-  document.getElementById('last-updated').textContent = d.lastUpdated ? new Date(d.lastUpdated).toLocaleTimeString() : '—';
+  const scopeLabel = d.scope === 'month' && d.month ? ` · Viewing ${d.month}` : ' · Viewing all time';
+  document.getElementById('last-updated').textContent = (d.lastUpdated ? new Date(d.lastUpdated).toLocaleTimeString() : '—') + scopeLabel;
+  document.getElementById('daily-chart-title').textContent = d.scope === 'month' && d.month ? `Daily Activity (${d.month})` : 'Daily Activity (recent days)';
 
   // Stats cards
   document.getElementById('s-visits').textContent = fmt(d.totalVisits);
@@ -355,16 +388,16 @@ function renderLangChart(lc) {
 }
 
 function renderDailyChart(dailyStats) {
-  const days = [];
-  const visits = []; const games = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
-    days.push(key.slice(5)); // MM-DD
-    const s = dailyStats[key] || {};
-    visits.push(s.visits || 0);
-    games.push(s.games || 0);
+  const entries = Object.entries(dailyStats || {}).sort((a,b) => a[0].localeCompare(b[0]));
+  let selected = entries;
+  if (entries.length > 31) selected = entries.slice(-31);
+  if (selected.length === 0) {
+    const today = new Date().toISOString().split('T')[0];
+    selected = [[today, { visits:0, games:0 }]];
   }
+  const days = selected.map(([key]) => key.slice(5));
+  const visits = selected.map(([,s]) => s.visits || 0);
+  const games = selected.map(([,s]) => s.games || 0);
   if (charts.daily) {
     charts.daily.data.labels = days;
     charts.daily.data.datasets[0].data = visits;
